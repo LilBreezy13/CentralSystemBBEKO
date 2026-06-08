@@ -1140,15 +1140,16 @@ const CONFIG = {
 
   PRODUCTION_EXAMS: [
     {
-      id:    "mock_mar_2026",
-      label: "OMEGA MOCK - MARCH 2026",
-      term:  "Second Term",
-      type:  "mock",
+      id:    "terminal_jul_2026",
+      label: "JULY TERMINAL - JULY 2026",
+      term:  "Third Term",
+      type:  "terminal",
       tabs: {
-        records:  "RECORDS OMEGA MOCK - MARCH 2026",
-        newlate:   "NEW-LATE OMEGA MOCK - MARCH 2026",
-        shortages: "SHORTAGES OMEGA MOCK - MARCH 2026",
-        charts:    "CHARTS OMEGA MOCK - MARCH 2026"
+        records:  "RECORDS JULY TERMINAL - JULY 2026",
+        newlate:   "NEW-LATE JULY TERMINAL - JULY 2026",
+        shortages: "SHORTAGES JULY TERMINAL - JULY 2026",
+        charts:    "CHARTS JULY TERMINAL - JULY 2026",
+        rejected: "REJECTED JULY TERMINAL - JULY 2026"
       }
     },
     
@@ -1161,7 +1162,8 @@ const CONFIG = {
         records:   "RECORDS DECEMBER TERMINAL - DECEMBER 2026",
         newlate:   "NEW-LATE DECEMBER TERMINAL - DECEMBER 2026",
         shortages: "SHORTAGES DECEMBER TERMINAL - DECEMBER 2026",
-        charts:    "CHARTS DECEMBER TERMINAL - DECEMBER 2026"
+        charts:    "CHARTS DECEMBER TERMINAL - DECEMBER 2026",
+        rejected: "REJECTED JULY TERMINAL - DECEMBER 2026"
       }
     }
   ]
@@ -1820,6 +1822,29 @@ async function fetchProductionSheet(examCfg, sheetType) {
           shortages:  shortMap[name]|| 0
         }));
     }
+// if (sheetType === "rejected") {
+    //   const rejHeaderRow = raw[2] || [];
+    //   const rejDataRows  = raw.slice(3).filter(r => r.some(c => c && c.toString().trim() !== ""));
+    //   const totalAmt     = rejDataRows.reduce((s,r) => s + (parseFloat((r[4]||"").toString().replace(/[^0-9.]/g,""))||0), 0);
+    //   const byMarketer   = {};
+    //   rejDataRows.forEach(r => { const m=(r[5]||"Unknown").toString().trim(); byMarketer[m]=(byMarketer[m]||0)+1; });
+    //   meta.totalRejected = rejDataRows.length;
+    //   meta.totalAmount   = totalAmt;
+    //   meta.byMarketer    = byMarketer;
+    //   return { headers: rejHeaderRow, rows: rejDataRows, meta, examLabel: examCfg.label, term: examCfg.term, type: examCfg.type };
+    // }
+
+    if (sheetType === "rejected") {
+      const rejHeaderRow = raw[2] || [];
+      const rejDataRows  = raw.slice(3).filter(r => r.some(c => c && c.toString().trim() !== ""));
+      const totalAmt     = rejDataRows.reduce((s,r) => s + (parseFloat((r[4]||"").toString().replace(/[^0-9.]/g,""))||0), 0);
+      const byMarketer   = {};
+      rejDataRows.forEach(r => { const m=(r[5]||"Unknown").toString().trim(); byMarketer[m]=(byMarketer[m]||0)+1; });
+      meta.totalRejected = rejDataRows.length;
+      meta.totalAmount   = totalAmt;
+      meta.byMarketer    = byMarketer;
+      return { headers: rejHeaderRow, rows: rejDataRows, meta, examLabel: examCfg.label, term: examCfg.term, type: examCfg.type };
+    }
 
     return { headers: headerRow, rows: dataRows, meta, examLabel: examCfg.label, term: examCfg.term, type: examCfg.type };
   } catch(err) {
@@ -1832,7 +1857,7 @@ async function fetchProductionSheet(examCfg, sheetType) {
 async function fetchCurrentProdExam() {
   const examCfg = CONFIG.PRODUCTION_EXAMS[prodExamIdx];
   if (!examCfg) return;
-  const types = ["records","newlate","shortages","charts"];
+ const types = ["records","newlate","shortages","charts","rejected"];
   const results = await Promise.all(types.map(t => fetchProductionSheet(examCfg, t)));
   types.forEach((t, i) => {
     const key = examCfg.id + "_" + t;
@@ -2699,11 +2724,11 @@ async function renderProduction(panel) {
       </select>
       <!-- Sheet type tabs -->
       <div style="display:flex;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-md);padding:4px">
-        ${["records","newlate","shortages","charts"].map(t => `
-          <button id="prod-tab-${t}" class="chart-tab ${prodSheetType===t?"active":""}"
-            onclick="switchProdSheet('${t}')" style="padding:6px 14px;font-size:12px">
-            ${{records:"📋 Records",newlate:"🏫 New / Late",shortages:"⚠️ Shortages",charts:"📊 Charts"}[t]}
-          </button>`).join("")}
+       ${["records","newlate","shortages","charts","rejected"].map(t => `
+  <button id="prod-tab-${t}" class="chart-tab ${prodSheetType===t?"active":""}"
+    onclick="switchProdSheet('${t}')" style="padding:6px 14px;font-size:12px">
+    ${{records:"📋 Records",newlate:"🏫 New / Late",shortages:"⚠️ Shortages",charts:"📊 Charts",rejected:"🚫 Rejected"}[t]}
+  </button>`).join("")}
       </div>
       <!-- Branch toggle (replaces Supervisor) -->
       <div style="margin-left:auto;display:flex;gap:6px">
@@ -2806,6 +2831,7 @@ function renderProdKPIs(d) {
     const topLate = [...marketers].sort((a,b) => b.late      - a.late)[0];
     const topShort= [...marketers].sort((a,b) => b.shortages - a.shortages)[0];
     strip.innerHTML = `
+    
       <div class="mk blue">
         <div class="mk-val">${topNew?.name || "—"}</div>
         <div class="mk-lbl">Top — New Schools (${topNew?.newSchool||0})</div>
@@ -2818,8 +2844,17 @@ function renderProdKPIs(d) {
         <div class="mk-val">${topShort?.name || "—"}</div>
         <div class="mk-lbl">Top — Shortages (${topShort?.shortages||0})</div>
       </div>`;
+      } else if (prodSheetType === "rejected") {
+    const meta = d?.meta || {};
+    strip.innerHTML = `
+      <div class="mk red"><div class="mk-val">${(meta.totalRejected||0).toLocaleString()}</div><div class="mk-lbl">Total Rejected</div></div>
+      <div class="mk amber"><div class="mk-val">GHS ${(meta.totalAmount||0).toLocaleString("en-GH",{minimumFractionDigits:2})}</div><div class="mk-lbl">Total Amount</div></div>
+      <div class="mk blue"><div class="mk-val">${Object.keys(meta.byMarketer||{}).length}</div><div class="mk-lbl">Marketers Affected</div></div>`;
   }
+  
 }
+
+
 
 function renderProdCharts(d) {
   const wrap = document.getElementById("prod-charts-row");
@@ -2867,6 +2902,31 @@ function renderProdCharts(d) {
           options:{ responsive:true, plugins:{ legend:{ labels:{ color:lc(), boxWidth:10, font:{size:11} } } } }
         });
       }
+    }, 80);
+
+  } else if (prodSheetType === "rejected") {
+    const meta = d?.meta || {};
+    const byMkt = meta.byMarketer || {};
+    wrap.innerHTML = `
+      <div class="charts-row">
+        <div class="chart-card"><h4>Rejections by Marketer</h4><canvas id="chart-rej-marketer" height="185"></canvas></div>
+        <div class="chart-card"><h4>Rejection Count</h4><canvas id="chart-rej-donut" height="185"></canvas></div>
+      </div>`;
+    setTimeout(() => {
+      mkChart("chart-rej-marketer", {
+        type:"bar",
+        data:{ labels:Object.keys(byMkt), datasets:[{ label:"Rejections", data:Object.values(byMkt),
+          backgroundColor:"rgba(255,77,109,.75)", borderRadius:5, borderWidth:0 }]},
+        options:{ responsive:true, plugins:{legend:{display:false}},
+          scales:{x:{ticks:{color:lc()},grid:{color:gc()}},y:{ticks:{color:lc()},grid:{color:gc()}}} }
+      });
+      mkChart("chart-rej-donut", {
+        type:"doughnut",
+        data:{ labels:Object.keys(byMkt), datasets:[{ data:Object.values(byMkt),
+          backgroundColor:["#ff4d6d","#ffb830","#3d9cf5","#a78bfa","#2dd4bf","#fb923c"],
+          borderWidth:2, borderColor:isDark?"#0d1220":"#fff" }]},
+        options:{ responsive:true, plugins:{ legend:{ labels:{ color:lc(), boxWidth:10, font:{size:11} } } } }
+      });
     }, 80);
 
   } else if (prodSheetType === "newlate") {
@@ -2952,7 +3012,7 @@ function renderProdRows() {
   const title = document.getElementById("prod-table-title");
   if (!wrap) return;
 
-  const titles = { records:"Records", newlate:"New / Late Schools", shortages:"Shortages", charts:"Marketer Performance" };
+ const titles = { records:"Records", newlate:"New / Late Schools", shortages:"Shortages", charts:"Marketer Performance", rejected:"Rejected Parcels" };
   if (title) title.textContent = titles[prodSheetType] || "Records";
 
   if (!d) {
@@ -3043,7 +3103,7 @@ async function switchProdExam(idx) {
 async function switchProdSheet(type) {
   prodSheetType = type;
   // Update tab button styles
-  ["records","newlate","shortages","charts"].forEach(t => {
+["records","newlate","shortages","charts","rejected"].forEach(t => {
     const btn = document.getElementById("prod-tab-" + t);
     if (btn) btn.classList.toggle("active", t === type);
   });
@@ -4085,7 +4145,7 @@ async function updateStaffInFirestore(id, data) {
   await updateDoc(doc(db, "staff", id), { ...clean, updatedAt: serverTimestamp() });
 }
 
-/* ── Fill rate calculator ── */
+
 function calcFillRate(data) {
   const allRequired = Object.values(REQUIRED_FIELDS).flat();
   // Map field IDs → data keys
