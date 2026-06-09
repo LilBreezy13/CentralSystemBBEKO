@@ -1204,24 +1204,29 @@ let currentBranch = "greater";
    USERS & PERMISSIONS
 ══════════════════════════════════════════ */
 const USERS = [
-  { username: "admin",       password: "Admin@2024",  name: "Super Admin",        role: "superadmin",    dept: "all" },
-  { username: "md",          password: "MD@secure1",  name: "Managing Director",  role: "finance_admin", dept: "all" },
-  { username: "chiefdir",    password: "Chief@2024",  name: "Chief Director",     role: "finance_admin", dept: "all" },
-  { username: "accountant",  password: "Acct@2024",   name: "Accountant",         role: "accountant",    dept: "all" },
-  { username: "secretary1",  password: "Sec@pass1",   name: "Secretaries",        role: "secretary",     dept: "secretaries" },
-  { username: "production1", password: "Prod@pass1",  name: "Mavis Oppong",       role: "staff",         dept: "production" },
-  { username: "examsoffice", password: "Exam@pass1",  name: "Exam Officer",            role: "staff",         dept: "exams" },
-  { username: "debtoffice",  password: "Debt@pass1",  name: "Debt Officer",       role: "staff",         dept: "debt" },
-  { username: "salesrep1",   password: "Sales@pass1", name: "Nicholas Adebayo",   role: "manager",       dept: "sales" }
+  { username: "admin",       password: "Admin@2024",  name: "Super Admin",        role: "superadmin",        dept: "all" },
+  { username: "chiefdir",    password: "Chief@2024",  name: "Bacon Atsu Amengor",     role: "chief_director",    dept: "all" },
+  { username: "md",          password: "MD@secure1",  name: "Francis Vinyo",  role: "managing_director", dept: "all" },
+  { username: "gm",          password: "GM@secure1",  name: "Victoria Governor",  role: "general_manager", dept: "all" },
+  { username: "accountant",  password: "Acct@2024",   name: "Accountant",         role: "accountant",        dept: "all" },
+  { username: "secretary1",  password: "Sec@pass1",   name: "Secretaries",        role: "secretary",         dept: "secretaries" },
+  { username: "production1", password: "Prod@pass1",  name: "Mavis Oppong",       role: "staff",             dept: "production" },
+  { username: "examsoffice", password: "Exam@pass1",  name: "Exam Officer",       role: "staff",             dept: "exams" },
+  { username: "debtoffice",  password: "Debt@pass1",  name: "Debt Officer",       role: "staff",             dept: "debt" },
+  { username: "salesrep1",   password: "Sales@pass1", name: "Nicholas Adebayo",   role: "manager",           dept: "sales" }
+
 ];
 
 const PERMISSIONS = {
-  superadmin:    { canEdit: true,  canDelete: true,  seesFinance: true,  seesAll: true,  extraTabs: []                      },
-  finance_admin: { canEdit: false, canDelete: false, seesFinance: true,  seesAll: true,  extraTabs: []                      },
-  accountant:    { canEdit: false, canDelete: false, seesFinance: true,  seesAll: true,  extraTabs: []                      },
-  secretary:     { canEdit: false, canDelete: false, seesFinance: true,  seesAll: false, extraTabs: []                      },
-  manager:       { canEdit: false, canDelete: false, seesFinance: false, seesAll: true,  extraTabs: []                      },
-  staff:         { canEdit: false, canDelete: false, seesFinance: false, seesAll: false, extraTabs: []                      }
+  superadmin:        { canEdit: true,  canDelete: true,  seesFinance: true,  seesAll: true,  seesStaff: true,  extraTabs: [] },
+  general_manager:   { canEdit: true,  canDelete: true,  seesFinance: true,  seesAll: true,  seesStaff: true,  extraTabs: [] },
+  managing_director: { canEdit: false, canDelete: false, seesFinance: true,  seesAll: true,  seesStaff: true,  extraTabs: [] },
+  chief_director:    { canEdit: false, canDelete: false, seesFinance: true,  seesAll: true,  seesStaff: true,  extraTabs: [] },
+  finance_admin:     { canEdit: false, canDelete: false, seesFinance: true,  seesAll: true,  seesStaff: false, extraTabs: [] },
+  accountant:        { canEdit: false, canDelete: false, seesFinance: true,  seesAll: true,  seesStaff: false, extraTabs: [] },
+  secretary:         { canEdit: false, canDelete: false, seesFinance: true,  seesAll: false, seesStaff: false, extraTabs: [] },
+  manager:           { canEdit: false, canDelete: false, seesFinance: false, seesAll: true,  seesStaff: false, extraTabs: [] },
+  staff:             { canEdit: false, canDelete: false, seesFinance: false, seesAll: false, seesStaff: false, extraTabs: [] }
 };
 /* ══════════════════════════════════════════
    SAMPLE DATA
@@ -1372,14 +1377,13 @@ staff: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="curr
 };
 
 const TAB_CONFIG = [
-  { id:"overview",    label:"Overview",        dept:"all",         restricted:false },
-  { id:"secretaries", label:"Secretaries",     dept:"secretaries", restricted:false },
-  { id:"production",  label:"Production",      dept:"production",  restricted:false },
-  { id:"exams",       label:"Exams Office",    dept:"exams",       restricted:false },
-  // { id:"sales",    label:"Sales",           dept:"sales",       restricted:false },
-  { id:"debt",        label:"Debt Office",     dept:"debt",        restricted:false },
-  { id:"finance",     label:"Finance Summary", dept:"all",         restricted:true  },
-  { id:"staff",       label:"Staff",           dept:"all",         restricted:false }
+  { id:"overview",    label:"Overview",        dept:"all",         restricted:false, staffOnly:false },
+  { id:"secretaries", label:"Secretaries",     dept:"secretaries", restricted:false, staffOnly:false },
+  { id:"production",  label:"Production",      dept:"production",  restricted:false, staffOnly:false },
+  { id:"exams",       label:"Exams Office",    dept:"exams",       restricted:false, staffOnly:false },
+  { id:"debt",        label:"Debt Office",     dept:"debt",        restricted:false, staffOnly:false },
+  { id:"finance",     label:"Finance Summary", dept:"all",         restricted:true,  staffOnly:false },
+  { id:"staff",       label:"Staff",           dept:"all",         restricted:false, staffOnly:true  }
 ];
 
 /* ══════════════════════════════════════════
@@ -1482,16 +1486,14 @@ function showApp() {
 
 function canSeeTab(tab) {
   const p = PERMISSIONS[currentUser.role];
+  if (tab.staffOnly) return p.seesStaff;
   if (tab.restricted) return p.seesFinance;
   if (tab.dept === "all") return true;
   if (p.seesAll) return true;
- // Exams office staff can also see production and debt tabs
   if (currentUser.dept === "exams" && ["production","debt"].includes(tab.id)) return true;
-  // Production staff can also see exams office tab
   if (currentUser.dept === "production" && tab.id === "exams") return true;
   return tab.dept === currentUser.dept;
 }
-
 
 function buildNav() {
   const nl = document.getElementById("nav-links");
