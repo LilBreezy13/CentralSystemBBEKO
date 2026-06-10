@@ -1102,6 +1102,8 @@ body.light .topbar { background: rgba(240,243,250,.9); }
 
 <!-- ADD STAFF MODAL -->
 <div id="add-staff-modal-root"></div>
+<!-- HEALTH PANEL -->
+<div class="panel" id="panel-health"></div>
     </div>
   </div>
 </div>
@@ -1177,6 +1179,8 @@ const BRANCHES = {
     journalSheetId: "1341Pr7AlXwxBqjA3sJAmltm-kWL3HP0OV4nwGuSxEY0", // keep — used for overview KPI totals
     journalTab: "JOURNAL ",
     proxyUrl: CONFIG.SECRETARY_PROXY, // ← ADD THIS LINE
+
+     healthProxyUrl: "https://script.google.com/macros/s/AKfycbxUYUqtvMHt66SRVBTOBa8aM_1HKsuqd_Z2zhqgWOGNt133b_ofwntlAz6yGYKdTcTdaA/exec",
     active: true
   },
   upper: {
@@ -1186,6 +1190,8 @@ const BRANCHES = {
     journalSheetId: "1VXfDdunVgURV49Bt_xlepMUqbsvy9LSZnng5ABrwDgo",
     journalTab: "JOURNAL ",
     proxyUrl: "https://script.google.com/macros/s/AKfycbzkv7DuWPC73rwigt5eLaXWodUjH0Bo3DBO7JkikEJGY_SOsNEuulKK1vyWPn7SEiGV6Q/exec", // ← ADD THIS LINE (leave empty until upper branch has its own proxy)
+  
+    healthProxyUrl: "https://script.google.com/macros/s/YOUR_UPPER_HEALTH_PROXY/exec",
     active: true
   },
   central: {
@@ -1195,6 +1201,8 @@ const BRANCHES = {
     journalSheetId: "1yl-AklQu__VUpaOfb9ShHhfo60Q77pwnGPwPQkMY7PY",
     journalTab: "JOURNAL ",
     proxyUrl: "https://script.google.com/macros/s/AKfycbywFb3P2AqDHL45FNjMYIChG1Nv_Azj6lZ8Gap0t9IGZbUSFA0ZU0t4frUYWbN6Bo-G/exec", // ← ADD THIS LINE
+   
+ healthProxyUrl: "https://script.google.com/macros/s/YOUR_CENTRAL_HEALTH_PROXY/exec",
     active: true
   }
 };
@@ -1374,6 +1382,7 @@ const NAV_ICONS = {
   debt:        `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/><line x1="12" y1="6" x2="12" y2="6.01"/></svg>`,
   finance:     `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg>`,
 staff: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+health: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`,
 };
 
 const TAB_CONFIG = [
@@ -1383,7 +1392,8 @@ const TAB_CONFIG = [
   { id:"exams",       label:"Exams Office",    dept:"exams",       restricted:false, staffOnly:false },
   { id:"debt",        label:"Debt Office",     dept:"debt",        restricted:false, staffOnly:false },
   { id:"finance",     label:"Finance Summary", dept:"all",         restricted:true,  staffOnly:false },
-  { id:"staff",       label:"Staff",           dept:"all",         restricted:false, staffOnly:true  }
+  { id:"staff",       label:"Staff",           dept:"all",         restricted:false, staffOnly:true  },
+  { id:"health",      label:"Health Data",     dept:"all",         restricted:false, staffOnly:false, healthOnly:true }
 ];
 
 /* ══════════════════════════════════════════
@@ -1486,6 +1496,7 @@ function showApp() {
 
 function canSeeTab(tab) {
   const p = PERMISSIONS[currentUser.role];
+  if (tab.healthOnly) return ["superadmin","general_manager","managing_director","chief_director"].includes(currentUser.role);
   if (tab.staffOnly) return p.seesStaff;
   if (tab.restricted) return p.seesFinance;
   if (tab.dept === "all") return true;
@@ -2069,6 +2080,7 @@ function renderTab(id) {
     case "debt":        renderDebt(panel); break;
     case "finance":     renderFinance(panel); break;
     case "staff":       renderStaff(panel); break;
+    case "health":      renderHealth(panel); break;
   }
 }
 
@@ -3296,15 +3308,15 @@ function renderExamRows() {
             </div>
             <div style="margin-left:auto;display:flex;gap:16px">
               <div style="text-align:right">
-                <div style="font-size:18px;font-weight:800;color:var(--teal);font-family:var(--font-display)">${fCands.toLocaleString()}</div>
+               <div style="font-size:18px;font-weight:800;color:var(--teal)">${fCands.toLocaleString()}</div>
                 <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">Candidates</div>
               </div>
               <div style="text-align:right">
-                <div style="font-size:18px;font-weight:800;color:var(--green);font-family:var(--font-display)">${ghs(fBill)}</div>
+              <div style="font-size:18px;font-weight:800;color:var(--green)">${ghs(fBill)}</div>
                 <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">Total Bill</div>
               </div>
               <div style="text-align:right">
-                <div style="font-size:18px;font-weight:800;color:var(--purple);font-family:var(--font-display)">${fFrench}</div>
+              <div style="font-size:18px;font-weight:800;color:var(--purple)">${fFrench}</div>
                 <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">With French</div>
               </div>
             </div>
@@ -3316,7 +3328,7 @@ function renderExamRows() {
             <div style="display:flex;gap:6px;flex-wrap:wrap">
               ${gradeLabels.map((lbl,i) => gradeTotals[i]>0 ? `
                 <div style="text-align:center;padding:6px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);min-width:42px">
-                  <div style="font-size:14px;font-weight:800;color:var(--blue);font-family:var(--font-display)">${gradeTotals[i]}</div>
+                 <div style="font-size:14px;font-weight:800;color:var(--blue)">${gradeTotals[i]}</div>
                   <div style="font-size:10px;color:var(--text3)">${lbl}</div>
                 </div>` : "").join("")}
             </div>
@@ -3574,7 +3586,7 @@ function renderDebt(panel) {
       <div class="kpi-card red"><div class="kpi-glow"></div><div class="kpi-label">Outstanding</div><div class="kpi-value">${ghs(totalDue)}</div><div class="kpi-icon">⚠️</div></div>
       <div class="kpi-card orange"><div class="kpi-glow"></div><div class="kpi-label">Schools in Debt</div><div class="kpi-value">${schoolsWithDebt}</div><div class="kpi-icon">🏫</div></div>
       <div class="kpi-card blue"><div class="kpi-glow"></div><div class="kpi-label">Total Invoiced</div><div class="kpi-value">${ghs(totalOwed)}</div><div class="kpi-icon">📄</div></div>
-      <div class="kpi-card green"><div class="kpi-glow"></div><div class="kpi-label">Collected</div><div class="kpi-value">${ghs(totalPaid)}</div><div class="kpi-sub">${recovery}% recovery</div><div class="kpi-icon">✅</div></div>
+      <div class="kpi-card green"><div class="kpi-glow"></div><div class="kpi-label">Collected</div><div class="kpi-value">${ghs(totalPaid)}</div><div class="kpi-sub">${recovery}% recovery</div><div class="kpi-icon"></div></div>
     </div>
     <div class="charts-row" style="margin-bottom:24px">
       <div class="chart-card"><h4>Debt per Sales Rep</h4><canvas id="chart-debt-reps" height="185"></canvas></div>
@@ -4026,6 +4038,616 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove("show"), 3200);
 }
 
+
+/* ══════════════════════════════════════════
+   HEALTH MODULE
+══════════════════════════════════════════ */
+
+async function fetchHealthData(branchKey) {
+  const branch = BRANCHES[branchKey];
+  if (!branch || !branch.healthProxyUrl || branch.healthProxyUrl.includes("YOUR_")) return null;
+  try {
+    const res  = await fetch(branch.healthProxyUrl + "?sheet=DATABASE");
+    const json = await res.json();
+    if (json.error || !json.rows || !json.rows.length) return null;
+
+    // Clean contacts: proxy may return numbers like "256613433" → prepend "0"
+    const rows = json.rows.map(r => r.map((cell, i) => {
+      if (i === 4 && cell && /^\d{8,9}$/.test(String(cell).replace(/\.0$/, ""))) {
+        return "0" + String(cell).replace(/\.0$/, "");
+      }
+      // Strip trailing .0 from serial dates that came through as numbers
+      if (typeof cell === "string" && /^\d+\.0$/.test(cell)) return cell.slice(0, -2);
+      return cell;
+    }));
+
+    return { headers: json.headers, rows };
+  } catch(e) {
+    console.error("Health fetch error", branchKey, e);
+    return null;
+  }
+}
+
+const _healthCache = {};
+
+async function renderHealth(panel) {
+  if (_healthCache[healthBranch]) {
+    healthData = _healthCache[healthBranch];
+    buildHealthPanel(panel);
+    // Refresh in background silently
+    fetchHealthData(healthBranch).then(d => {
+      if (d) { _healthCache[healthBranch] = d; healthData = d; }
+    });
+    return;
+  }
+  panel.innerHTML = `<div class="loading-wrap"><div class="spinner"></div></div>`;
+  healthData = await fetchHealthData(healthBranch);
+  if (healthData) _healthCache[healthBranch] = healthData;
+  buildHealthPanel(panel);
+}
+
+async function switchHealthBranch(key) {
+  if (!BRANCHES[key]?.active) return;
+  healthBranch = key;
+  const panel = document.getElementById("panel-health");
+  if (_healthCache[key]) {
+    healthData = _healthCache[key];
+    buildHealthPanel(panel);
+    fetchHealthData(key).then(d => { if (d) { _healthCache[key] = d; healthData = d; } });
+  } else {
+    panel.innerHTML = `<div class="loading-wrap"><div class="spinner"></div></div>`;
+    healthData = await fetchHealthData(key);
+    if (healthData) _healthCache[key] = healthData;
+    buildHealthPanel(panel);
+  }
+}
+function buildHealthPanel(panel) {
+  const rows = healthData?.rows || [];
+
+  // Filter out empty rows (no staff name)
+  const validRows = rows.filter(r => (r[2]||"").toString().trim() !== "");
+
+  const total    = validRows.length;
+  const active   = validRows.filter(r => (r[7]||"").toString().includes("")).length;
+  const inactive = validRows.filter(r => (r[7]||"").toString().includes("")).length;
+  const referred = validRows.filter(r => (r[12]||"").toString().trim() !== "").length;
+  const totalBill = validRows.reduce((s, r) => {
+    const v = parseFloat((r[13]||"0").toString().replace(/[^0-9.]/g, ""));
+    return s + (isNaN(v) ? 0 : v);
+  }, 0);
+
+  panel.innerHTML = `
+    <!-- HEADER -->
+    <div class="sh" style="margin-bottom:20px">
+      <div class="sh-left">
+        <div class="sh-title">Health Data</div>
+        <span class="sh-count">${total} records</span>
+      </div>
+      <div class="sh-right">
+        <!-- Branch tab switcher -->
+        <div style="display:flex;gap:3px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-md);padding:3px">
+          ${Object.entries(BRANCHES).filter(([,b]) => b.active).map(([k, b]) => `
+            <button onclick="switchHealthBranch('${k}')"
+              style="padding:7px 16px;border-radius:var(--r-sm);font-size:12px;font-weight:700;
+                border:none;cursor:pointer;transition:all .2s;font-family:var(--font-display);
+                background:${k === healthBranch ? b.color + "22" : "transparent"};
+                color:${k === healthBranch ? b.color : "var(--text2)"};
+                outline:${k === healthBranch ? "1.5px solid " + b.color + "66" : "none"}">
+              <span style="display:inline-block;width:7px;height:7px;border-radius:50%;
+                background:${b.color};margin-right:6px;vertical-align:middle"></span>${b.short}
+            </button>`).join("")}
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI STRIP -->
+    <div class="mini-strip" style="margin-bottom:22px">
+      <div class="mk blue">  <div class="mk-val">${total}</div>    <div class="mk-lbl">Total Records</div></div>
+      <div class="mk green"> <div class="mk-val">${active}</div>   <div class="mk-lbl">Active Insurance</div></div>
+      <div class="mk red">   <div class="mk-val">${inactive}</div> <div class="mk-lbl">Inactive Insurance</div></div>
+      <div class="mk amber"> <div class="mk-val">${referred}</div> <div class="mk-lbl">Hospital Referrals</div></div>
+      <div class="mk teal">  <div class="mk-val">GHS ${totalBill.toLocaleString("en-GH",{minimumFractionDigits:2})}</div><div class="mk-lbl">Total Bills</div></div>
+    </div>
+
+    <!-- CENTERED SUB-TAB SWITCH -->
+    <div style="display:flex;justify-content:center;margin-bottom:24px">
+      <div style="display:inline-flex;gap:0;background:var(--bg2);border:1px solid var(--border);
+        border-radius:40px;padding:4px">
+        <button id="htab-database" onclick="switchHealthSubTab('database')"
+          style="padding:10px 40px;border-radius:40px;font-size:13px;font-weight:700;
+            border:none;cursor:pointer;transition:all .22s;font-family:var(--font-display);
+            background:${healthSubTab==='database'?'linear-gradient(135deg,#3d9cf5,#6366f1)':'transparent'};
+            color:${healthSubTab==='database'?'#fff':'var(--text2)'};
+            box-shadow:${healthSubTab==='database'?'0 4px 16px rgba(61,156,245,.28)':'none'}">
+          Database
+        </button>
+        <button id="htab-report" onclick="switchHealthSubTab('report')"
+          style="padding:10px 40px;border-radius:40px;font-size:13px;font-weight:700;
+            border:none;cursor:pointer;transition:all .22s;font-family:var(--font-display);
+            background:${healthSubTab==='report'?'linear-gradient(135deg,#00e5a0,#2dd4bf)':'transparent'};
+            color:${healthSubTab==='report'?'#fff':'var(--text2)'};
+            box-shadow:${healthSubTab==='report'?'0 4px 16px rgba(0,229,160,.22)':'none'}">
+          Report
+        </button>
+      </div>
+    </div>
+
+    <!-- CONTENT AREA -->
+    <div id="health-content-area"></div>`;
+
+  renderHealthContent();
+}
+
+function switchHealthBranch(key) {
+  if (!BRANCHES[key]?.active) return;
+  healthBranch = key;
+  renderHealth(document.getElementById("panel-health"));
+}
+
+function switchHealthSubTab(tab) {
+  healthSubTab = tab;
+  const dbBtn = document.getElementById("htab-database");
+  const rpBtn = document.getElementById("htab-report");
+  if (dbBtn) {
+    dbBtn.style.background  = tab === "database" ? "linear-gradient(135deg,#3d9cf5,#6366f1)" : "transparent";
+    dbBtn.style.color       = tab === "database" ? "#fff" : "var(--text2)";
+    dbBtn.style.boxShadow   = tab === "database" ? "0 4px 16px rgba(61,156,245,.28)" : "none";
+  }
+  if (rpBtn) {
+    rpBtn.style.background  = tab === "report" ? "linear-gradient(135deg,#00e5a0,#2dd4bf)" : "transparent";
+    rpBtn.style.color       = tab === "report" ? "#fff" : "var(--text2)";
+    rpBtn.style.boxShadow   = tab === "report" ? "0 4px 16px rgba(0,229,160,.22)" : "none";
+  }
+  renderHealthContent();
+}
+
+function renderHealthContent() {
+  const area = document.getElementById("health-content-area");
+  if (!area) return;
+  healthSubTab === "database" ? renderHealthDatabase(area) : renderHealthReport(area);
+}
+
+/* ─────────────────────────────────────────
+   DATABASE TAB
+   Columns (proxy row indices):
+   [0]=blank [1]=DATE [2]=STAFF NAME [3]=DESIGNATION
+   [4]=CONTACT [5]=MEDICAL CONDITION [6]=ALLERGIES
+   [7]=INS.STATUS [8]=LAST CHECKUP [9]=REMARK
+   [10]=FIRST AID [11]=ASSESSMENT OFFICER
+   [12]=HOSPITAL ADMITTED [13]=HOSPITAL BILL
+───────────────────────────────────────── */
+function renderHealthDatabase(area) {
+  area.innerHTML = `
+    <div class="sh" style="margin-bottom:12px">
+      <div class="sh-left">
+        <span class="sh-count" id="health-db-count">— entries</span>
+      </div>
+      <div class="sh-right">
+        <select class="filter-select" id="health-db-ins" onchange="renderHealthDbRows()">
+          <option value="">All Insurance</option>
+          <option value="active"> Active</option>
+          <option value="inactive"> Inactive</option>
+        </select>
+        <select class="filter-select" id="health-db-condition" onchange="renderHealthDbRows()">
+          <option value="">All Conditions</option>
+          ${[...new Set((healthData?.rows||[]).filter(r=>(r[2]||"").trim()).map(r=>(r[5]||"").trim()).filter(Boolean))].sort()
+            .map(c=>`<option value="${c}">${c}</option>`).join("")}
+        </select>
+        <div class="search-wrap">
+          <span class="s-icon">⌕</span>
+          <input class="search-input" id="health-db-search"
+            placeholder="Search name, condition, hospital…"
+            oninput="renderHealthDbRows()" style="width:230px">
+        </div>
+      </div>
+    </div>
+    <div id="health-db-table"></div>`;
+  renderHealthDbRows();
+}
+
+function renderHealthDbRows() {
+  const allRows = (healthData?.rows || []).filter(r => (r[2]||"").toString().trim() !== "");
+  const q     = (document.getElementById("health-db-search")?.value   || "").toLowerCase();
+  const ins   =  document.getElementById("health-db-ins")?.value      || "";
+  const cond  =  document.getElementById("health-db-condition")?.value || "";
+
+  const filtered = allRows.filter(r => {
+    const insVal = (r[7]||"").toString();
+    if (ins === "active"   && !insVal.includes("✅")) return false;
+    if (ins === "inactive" && !insVal.includes("❌")) return false;
+    if (cond && (r[5]||"").toString().trim() !== cond) return false;
+    if (q) {
+      const hay = [r[1],r[2],r[3],r[4],r[5],r[6],r[9],r[10],r[11],r[12]].join(" ").toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  const cnt = document.getElementById("health-db-count");
+  if (cnt) cnt.textContent = filtered.length + " entries";
+
+  const wrap = document.getElementById("health-db-table");
+  if (!wrap) return;
+
+  if (!filtered.length) {
+    wrap.innerHTML = `<div class="table-wrap"><table>
+      <thead><tr>
+        <th>DATE</th><th>STAFF NAME</th><th>DESIGNATION</th><th>CONTACT</th>
+        <th>MEDICAL CONDITION</th><th>ALLERGIES</th><th>INS. STATUS</th>
+        <th>LAST CHECK-UP</th><th>REMARK / RECOMMENDATION</th><th>FIRST AID</th>
+        <th>ASSESSMENT OFFICER</th><th>HOSPITAL ADMITTED</th><th>HOSPITAL BILL</th>
+      </tr></thead>
+      <tbody><tr class="empty-row"><td colspan="13">No records found.</td></tr></tbody>
+    </table></div>`;
+    return;
+  }
+
+  wrap.innerHTML = `<div class="table-wrap scroll" style="border-radius:var(--r-lg)">
+    <table style="min-width:1500px;border-collapse:collapse">
+      <thead>
+        <tr>
+          <th style="min-width:100px;white-space:nowrap">DATE</th>
+          <th style="min-width:170px">STAFF NAME</th>
+          <th style="min-width:140px">DESIGNATION</th>
+          <th style="min-width:115px;font-family:var(--font-mono)">CONTACT</th>
+          <th style="min-width:140px">MEDICAL CONDITION</th>
+          <th style="min-width:110px">ALLERGIES</th>
+          <th style="min-width:105px;text-align:center">INS. STATUS</th>
+          <th style="min-width:115px;white-space:nowrap">LAST CHECK-UP</th>
+          <th style="min-width:220px;max-width:280px">REMARK / RECOMMENDATION</th>
+          <th style="min-width:180px;max-width:220px">FIRST AID</th>
+          <th style="min-width:155px">ASSESSMENT OFFICER</th>
+          <th style="min-width:180px">HOSPITAL ADMITTED</th>
+          <th style="min-width:120px;text-align:right">HOSPITAL BILL</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${filtered.map(r => {
+          const insVal = (r[7]||"").toString();
+          const insBadge = insVal.includes("✅")
+            ? `<span class="badge badge-green" style="font-size:10px">Active</span>`
+            : insVal.includes("❌")
+            ? `<span class="badge badge-red" style="font-size:10px">Inactive</span>`
+            : `<span style="color:var(--text3)">—</span>`;
+          const bill = parseFloat((r[13]||"0").toString().replace(/[^0-9.]/g,""));
+          return `<tr style="transition:background .12s" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background=''">
+            <td style="padding:10px 12px;font-family:var(--font-mono);font-size:11px;color:var(--text2);white-space:nowrap;border-bottom:1px solid var(--border)">${fmtHealthDate(r[1])}</td>
+            <td style="padding:10px 12px;font-weight:600;font-size:13px;border-bottom:1px solid var(--border)">${(r[2]||"—").toString()}</td>
+            <td style="padding:10px 12px;font-size:12px;color:var(--text2);border-bottom:1px solid var(--border)">${(r[3]||"—").toString()}</td>
+            <td style="padding:10px 12px;font-family:var(--font-mono);font-size:12px;border-bottom:1px solid var(--border)">${(r[4]||"—").toString()}</td>
+            <td style="padding:10px 12px;font-size:12.5px;border-bottom:1px solid var(--border)">
+              <span style="display:inline-flex;align-items:center;gap:5px">
+                <span style="width:6px;height:6px;border-radius:50%;background:${healthCondColor(r[5])};flex-shrink:0"></span>
+                ${(r[5]||"—").toString()}
+              </span>
+            </td>
+            <td style="padding:10px 12px;font-size:12px;color:var(--text2);border-bottom:1px solid var(--border)">${(r[6]||"—").toString()}</td>
+            <td style="padding:10px 12px;text-align:center;border-bottom:1px solid var(--border)">${insBadge}</td>
+            <td style="padding:10px 12px;font-family:var(--font-mono);font-size:11px;color:var(--text2);border-bottom:1px solid var(--border)">${fmtHealthDate(r[8])}</td>
+            <td style="padding:10px 12px;font-size:12px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-bottom:1px solid var(--border)"
+              title="${(r[9]||"").toString().replace(/"/g,'&quot;')}">${(r[9]||"—").toString()}</td>
+            <td style="padding:10px 12px;font-size:12px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-bottom:1px solid var(--border)"
+              title="${(r[10]||"").toString().replace(/"/g,'&quot;')}">${(r[10]||"—").toString()}</td>
+            <td style="padding:10px 12px;font-size:12px;color:var(--text2);border-bottom:1px solid var(--border)">${(r[11]||"—").toString()}</td>
+            <td style="padding:10px 12px;font-size:12px;border-bottom:1px solid var(--border)">${(r[12]||"—").toString()}</td>
+            <td style="padding:10px 12px;text-align:right;font-family:var(--font-mono);font-size:12px;border-bottom:1px solid var(--border);color:${bill>0?"var(--green)":"var(--text3)"};font-weight:${bill>0?"600":"400"}">${bill>0?"GHS "+bill.toLocaleString("en-GH",{minimumFractionDigits:2}):"—"}</td>
+          </tr>`;
+        }).join("")}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+/* ─────────────────────────────────────────
+   REPORT TAB
+   Replicates the REPORT sheet:
+   Top: Staff selector + Total Bill
+   Below: date · condition · allergies ·
+          insurance · last checkup · remark ·
+          first aid · hospital · bill
+───────────────────────────────────────── */
+function renderHealthReport(area) {
+  const allRows    = (healthData?.rows || []).filter(r => (r[2]||"").toString().trim() !== "");
+  const staffNames = [...new Set(allRows.map(r => (r[2]||"").toString().trim()))]
+  .filter(Boolean)
+  .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+
+  area.innerHTML = `
+    <!-- Staff selector card (mirrors REPORT sheet row 1: STAFF | name | TOTAL BILL | amount) -->
+    <div style="background:var(--bg1);border:1px solid var(--border);border-radius:var(--r-lg);
+      padding:20px 24px;margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+        <div style="display:flex;flex-direction:column;gap:6px;flex:1;min-width:240px">
+          <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;
+            letter-spacing:.08em">Select Staff Member</div>
+          <!-- Searchable dropdown -->
+          <div style="position:relative" id="health-staff-drop-wrap">
+            <input type="text" id="health-staff-search" class="form-input"
+              placeholder="Type or click to search staff…"
+              autocomplete="off"
+              oninput="filterHealthStaffDrop()"
+              onfocus="openHealthStaffDrop()"
+              onblur="closeHealthStaffDrop(180)"
+              style="padding:10px 14px;font-size:13px;font-weight:600;
+                background:var(--bg2);border:1.5px solid var(--border2);border-radius:var(--r-md);
+                color:var(--text);width:100%">
+            <div id="health-staff-droplist"
+              style="display:none;position:absolute;top:calc(100%+4px);left:0;right:0;z-index:300;
+                background:var(--bg1);border:1.5px solid var(--accent);border-radius:var(--r-md);
+                max-height:220px;overflow-y:auto;box-shadow:0 8px 28px rgba(0,0,0,.2);margin-top:3px">
+              ${staffNames.map(n=>`<div class="dropdown-item" data-name="${n.replace(/"/g,'&quot;')}"
+                onmousedown="pickHealthStaff(this.getAttribute('data-name'))">
+                <span style="font-weight:600">${n}</span>
+              </div>`).join("")}
+            </div>
+          </div>
+        </div>
+        <!-- Total bill display (mirrors TOTAL BILL cell in REPORT sheet) -->
+        <div id="health-report-bill-kpi"
+          style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-md);
+            padding:14px 22px;text-align:center;min-width:160px">
+          <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;
+            letter-spacing:.08em;margin-bottom:4px">TOTAL BILL</div>
+          <div style="font-size:22px;font-weight:800;color:var(--amber);font-family:var(--font-display)">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Report body — populated after staff selection -->
+    <div id="health-report-card"></div>`;
+}
+
+function openHealthStaffDrop() {
+  filterHealthStaffDrop();
+  const dl = document.getElementById("health-staff-droplist");
+  if (dl) dl.style.display = "block";
+}
+function closeHealthStaffDrop(delay) {
+  setTimeout(() => {
+    const dl = document.getElementById("health-staff-droplist");
+    if (dl) dl.style.display = "none";
+  }, delay || 0);
+}
+function filterHealthStaffDrop() {
+  const q      = (document.getElementById("health-staff-search")?.value || "").toLowerCase();
+  const allRows = (healthData?.rows || []).filter(r => (r[2]||"").toString().trim() !== "");
+ const names = [...new Set(allRows.map(r => (r[2]||"").toString().trim()))]
+  .filter(Boolean)
+  .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+  const dl     = document.getElementById("health-staff-droplist");
+  if (!dl) return;
+  const hits = q ? names.filter(n => n.toLowerCase().includes(q)) : names;
+  dl.innerHTML = hits.length
+    ? hits.map(n => `<div class="dropdown-item" data-name="${n.replace(/"/g,'&quot;')}"
+        onmousedown="pickHealthStaff(this.getAttribute('data-name'))">
+        <span style="font-weight:600">${n}</span>
+      </div>`).join("")
+    : `<div style="padding:10px 14px;font-size:12px;color:var(--text3)">No match found</div>`;
+  dl.style.display = "block";
+}
+function pickHealthStaff(name) {
+  const inp = document.getElementById("health-staff-search");
+  if (inp) inp.value = name;
+  closeHealthStaffDrop(0);
+  renderHealthStaffReport(name);
+}
+
+function renderHealthStaffReport(staffName) {
+  const card    = document.getElementById("health-report-card");
+  if (!card) return;
+
+  // All visits for this staff (mirrors rows in REPORT sheet data section)
+  const visits  = (healthData?.rows || []).filter(r =>
+    (r[2]||"").toString().trim() === staffName
+  );
+
+  if (!visits.length) {
+    card.innerHTML = `<div style="background:var(--bg1);border:1px solid var(--border);
+      border-radius:var(--r-lg);padding:48px;text-align:center;color:var(--text2)">
+      No health records found for <strong>${staffName}</strong> on this branch.</div>`;
+    // Zero out total bill
+    const billKPI = document.getElementById("health-report-bill-kpi");
+    if (billKPI) billKPI.querySelector("div:last-child").textContent = "GHS 0.00";
+    return;
+  }
+
+  // TOTAL BILL — mirrors "TOTAL BILL | amount" in REPORT sheet row 1
+  const totalBill = visits.reduce((s, r) => {
+    const v = parseFloat((r[13]||"0").toString().replace(/[^0-9.]/g,""));
+    return s + (isNaN(v) ? 0 : v);
+  }, 0);
+  const billKPI = document.getElementById("health-report-bill-kpi");
+  if (billKPI) {
+    const valEl = billKPI.querySelector("div:last-child");
+    if (valEl) valEl.textContent = "GHS " + totalBill.toLocaleString("en-GH", {minimumFractionDigits:2});
+  }
+
+  const latest = visits[visits.length - 1];
+  const insVal = (latest[7]||"").toString();
+  const insBadge = insVal.includes("")
+    ? `<span class="badge badge-green"> Active</span>`
+    : insVal.includes("")
+    ? `<span class="badge badge-red">Inactive</span>`
+    : `<span style="color:var(--text3)">—</span>`;
+
+  const pf = (lbl, val, opts={}) => `
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-md);padding:12px 14px">
+      <div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;
+        letter-spacing:.08em;margin-bottom:4px">${lbl}</div>
+      <div style="font-size:13px;font-weight:500;color:var(--text);
+        font-family:${opts.mono?"var(--font-mono)":"inherit"};
+        word-break:${opts.wrap?"break-word":"normal"}">${val||"—"}</div>
+    </div>`;
+
+  card.innerHTML = `
+    <!-- Staff header (mirrors STAFF row in REPORT sheet) -->
+    <div style="background:var(--bg1);border:1px solid var(--border);border-radius:var(--r-lg);
+      overflow:hidden;margin-bottom:16px">
+      <div style="background:linear-gradient(135deg,rgba(0,229,160,.07),rgba(45,212,191,.05));
+        padding:20px 24px;border-bottom:1px solid var(--border);
+        display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <!-- Avatar -->
+        <div style="width:54px;height:54px;border-radius:50%;
+          background:linear-gradient(135deg,#00e5a0,#2dd4bf);
+          display:flex;align-items:center;justify-content:center;
+          font-size:19px;font-weight:800;color:#fff;flex-shrink:0;
+          border:2px solid rgba(0,229,160,.3)">
+          ${staffName.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}
+        </div>
+        <div>
+          <div style="font-size:18px;font-weight:700;margin-bottom:2px">${staffName}</div>
+          <div style="font-size:12px;color:var(--text2)">${(latest[3]||"").toString()} &nbsp;·&nbsp; ${BRANCHES[healthBranch].short}</div>
+          <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">
+            ${insBadge}
+            ${(latest[4]||"").toString() ? `<span style="font-family:var(--font-mono);font-size:12px;color:var(--text2)">${(latest[4]||"").toString()}</span>` : ""}
+          </div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:14px;text-align:right;flex-wrap:wrap">
+          <div>
+           <div style="font-size:22px;font-weight:800;color:var(--blue)">${visits.length}</div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">Visit${visits.length!==1?"s":""}</div>
+          </div>
+          ${totalBill > 0 ? `<div>
+            <div style="font-size:22px;font-weight:800;color:var(--amber)">
+  GHS ${totalBill.toLocaleString("en-GH",{minimumFractionDigits:2})}
+</div>
+            </div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">Total Bill</div>
+          </div>` : ""}
+        </div>
+      </div>
+
+      <!-- Most recent visit details (mirrors REPORT sheet data row columns) -->
+      <div style="padding:20px 24px">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;
+          letter-spacing:.08em;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border)">
+          Most Recent Visit — ${fmtHealthDate(latest[1])}
+        </div>
+        <!-- Row mirrors REPORT sheet headers:
+             Date | Medical Condition | Allergies | Health Insurance | Last Medical Check Up -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px">
+          ${pf("Medical Condition", latest[5])}
+          ${pf("Allergies",         (latest[6]||"None recorded").toString())}
+          ${pf("Health Insurance",  insVal.includes("✅")?"Active":insVal.includes("❌")?"❌ Inactive":"—")}
+          ${pf("Last Medical Check-Up", fmtHealthDate(latest[8]), {mono:true})}
+          ${pf("Assessment Officer", latest[11])}
+          ${pf("Contact", latest[4], {mono:true})}
+        </div>
+        <!-- Remark | First Aid (full text, wrapping) -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+          ${pf("Remark / Recommendation", (latest[9]||"—").toString(), {wrap:true})}
+          ${pf("First Aid Administered",  (latest[10]||"—").toString(), {wrap:true})}
+        </div>
+        <!-- Hospital Admitted | Hospital Bill -->
+        ${(latest[12]||"").toString().trim() || parseFloat((latest[13]||"0").toString().replace(/[^0-9.]/g,"")) > 0 ? `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          ${pf("Hospital Admitted", latest[12])}
+          ${pf("Hospital Bill", (() => {
+            const v = parseFloat((latest[13]||"0").toString().replace(/[^0-9.]/g,""));
+            return v > 0 ? "GHS " + v.toLocaleString("en-GH",{minimumFractionDigits:2}) : "—";
+          })())}
+        </div>` : ""}
+      </div>
+    </div>
+
+    <!-- Visit history table (all rows for this staff, mirrors full REPORT data section) -->
+    ${visits.length > 1 ? `
+    <div style="background:var(--bg1);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden">
+      <div style="padding:14px 20px;border-bottom:1px solid var(--border);
+        font-family:var(--font-display);font-size:12px;font-weight:700;
+        text-transform:uppercase;letter-spacing:.08em;color:var(--text2)">
+        All Visit Records (${visits.length})
+      </div>
+      <div class="table-wrap scroll">
+        <table style="min-width:960px">
+          <thead>
+            <tr>
+              <th style="white-space:nowrap">DATE</th>
+              <th>MEDICAL CONDITION</th>
+              <th>ALLERGIES</th>
+              <th style="text-align:center">HEALTH INSURANCE</th>
+              <th style="white-space:nowrap">LAST CHECK-UP</th>
+              <th style="min-width:200px">REMARK</th>
+              <th style="min-width:160px">FIRST AID</th>
+              <th>HOSPITAL ADMITTED</th>
+              <th style="text-align:right">HOSPITAL BILL</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${visits.slice().reverse().map(r => {
+              const bill = parseFloat((r[13]||"0").toString().replace(/[^0-9.]/g,""));
+              const rIns = (r[7]||"").toString();
+              return `<tr style="transition:background .12s"
+                onmouseover="this.style.background='var(--bg2)'"
+                onmouseout="this.style.background=''">
+                <td style="font-family:var(--font-mono);font-size:11px;color:var(--text2);white-space:nowrap">${fmtHealthDate(r[1])}</td>
+                <td style="font-size:12.5px">
+                  <span style="display:inline-flex;align-items:center;gap:5px">
+                    <span style="width:6px;height:6px;border-radius:50%;background:${healthCondColor(r[5])};flex-shrink:0"></span>
+                    ${(r[5]||"—").toString()}
+                  </span>
+                </td>
+                <td style="font-size:12px;color:var(--text2)">${(r[6]||"—").toString()}</td>
+                <td style="text-align:center">
+                  ${rIns.includes("✅") ? `<span class="badge badge-green" style="font-size:10px">✅</span>`
+                  : rIns.includes("❌") ? `<span class="badge badge-red"   style="font-size:10px">❌</span>`
+                  : `<span style="color:var(--text3)">—</span>`}
+                </td>
+                <td style="font-family:var(--font-mono);font-size:11px;color:var(--text2)">${fmtHealthDate(r[8])}</td>
+                <td style="font-size:12px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+                  title="${(r[9]||"").toString().replace(/"/g,'&quot;')}">${(r[9]||"—").toString()}</td>
+                <td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+                  title="${(r[10]||"").toString().replace(/"/g,'&quot;')}">${(r[10]||"—").toString()}</td>
+                <td style="font-size:12px;color:var(--text2)">${(r[12]||"—").toString()}</td>
+                <td style="text-align:right;font-family:var(--font-mono);font-size:12px;
+                  color:${bill>0?"var(--green)":"var(--text3)"};font-weight:${bill>0?"600":"400"}">
+                  ${bill>0?"GHS "+bill.toLocaleString("en-GH",{minimumFractionDigits:2}):"—"}
+                </td>
+              </tr>`;
+            }).join("")}
+          </tbody>
+        </table>
+      </div>
+    </div>` : ""}`;
+}
+
+/* ── Helpers ── */
+function fmtHealthDate(val) {
+  if (!val || val === "") return "—";
+  const s = val.toString().trim();
+  // Already dd/mm/yyyy
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)) return s;
+  // ISO yyyy-mm-dd
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[3]}/${iso[2]}/${iso[1]}`;
+  // Serial number (Excel date)
+  const n = parseFloat(s);
+  if (!isNaN(n) && n > 40000) {
+    const d = new Date(Math.round((n - 25569) * 86400000));
+    const dd = String(d.getUTCDate()).padStart(2,"0");
+    const mm = String(d.getUTCMonth()+1).padStart(2,"0");
+    const yy = d.getUTCFullYear();
+    return `${dd}/${mm}/${yy}`;
+  }
+  return s;
+}
+
+function healthCondColor(cond) {
+  const c = (cond||"").toString().toLowerCase();
+  if (c.includes("malaria"))    return "#ff4d6d";
+  if (c.includes("flu") || c.includes("cold")) return "#3d9cf5";
+  if (c.includes("hypertension") || c.includes("blood")) return "#fb923c";
+  if (c.includes("diabetes"))   return "#ffb830";
+  if (c.includes("asthma"))     return "#a78bfa";
+  if (c.includes("typhoid"))    return "#2dd4bf";
+  if (c.includes("ulcer"))      return "#f472b6";
+  if (c.includes("migraine") || c.includes("headache")) return "#6366f1";
+  if (c.includes("fever"))      return "#ff4d6d";
+  if (c.includes("pain"))       return "#ffb830";
+  if (c.includes("anaemia") || c.includes("anemia")) return "#00e5a0";
+  return "#7a8aaa";
+}
+
 /* ══════════════════════════════════════════
    STAFF MODULE
 ══════════════════════════════════════════ */
@@ -4061,6 +4683,11 @@ let staffFilterDept  = "";
 let staffFilterBranch= "";
 let staffSearchQ     = "";
 let staffLoading     = false;
+// Health module state
+let healthBranch     = "greater";   // active branch
+let healthData       = null;         // raw rows from proxy
+let healthSubTab     = "database";  // "database" | "report"
+let healthSearchStaff = "";
 let addStaffDraft    = {};      // autosave draft
 let addStaffSection  = 0;       // current form section index
 let addStaffFiles    = { passport: null, documents: [] };
@@ -5763,7 +6390,7 @@ async function submitStaffForm() {
     showToast("⚠️ Save failed: " + msg.slice(0, 80));
     if (submitBtn) {
       submitBtn.disabled = false;
-      submitBtn.textContent = addStaffDraft._editId ? "💾 Save Changes" : "✅ Submit";
+      submitBtn.textContent = addStaffDraft._editId ? "Save Changes" : " Submit";
     }
   }
 }
