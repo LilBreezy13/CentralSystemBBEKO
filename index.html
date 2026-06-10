@@ -1404,14 +1404,36 @@ document.addEventListener("DOMContentLoaded", () => {
   if (saved) isDark = saved === "dark";
   applyTheme();
 
-  // Restore last good data from cache immediately
   const cacheTs = loadCache();
   if (cacheTs) {
     const age = Math.round((Date.now() - cacheTs.getTime()) / 60000);
     console.log("Cache restored — last fetch " + age + " min ago");
   }
 
-  sessionStorage.removeItem("bb_user");
+  // ── Check for a valid saved session ──
+  const SESSION_TIMEOUT_HOURS = 8; // adjust as needed
+  const savedSession  = localStorage.getItem("bb_session_user");
+  const savedSessionTs = localStorage.getItem("bb_session_ts");
+
+  if (savedSession && savedSessionTs) {
+    const ageHours = (Date.now() - parseInt(savedSessionTs)) / 3600000;
+    if (ageHours < SESSION_TIMEOUT_HOURS) {
+      try {
+        currentUser = JSON.parse(savedSession);
+        document.getElementById("login-screen").style.display = "none";
+        showApp();
+        return;
+      } catch(e) {
+        localStorage.removeItem("bb_session_user");
+        localStorage.removeItem("bb_session_ts");
+      }
+    } else {
+      // Session expired — clear it
+      localStorage.removeItem("bb_session_user");
+      localStorage.removeItem("bb_session_ts");
+    }
+  }
+
   currentUser = null;
   document.getElementById("app").style.display = "none";
   document.getElementById("login-screen").style.display = "flex";
@@ -1446,13 +1468,18 @@ function doLogin() {
   const user = USERS.find(x => x.username === u && x.password === p);
   if (!user) { err.style.display = "block"; return; }
   currentUser = user; err.style.display = "none";
-  sessionStorage.setItem("bb_user", JSON.stringify(user));
+  // Persist session to localStorage with a timestamp
+  localStorage.setItem("bb_session_user", JSON.stringify(user));
+  localStorage.setItem("bb_session_ts",   Date.now().toString());
   showApp();
 }
 function doLogout() {
   clearInterval(refreshTimer); refreshTimer = null;
-  sessionStorage.removeItem("bb_user");
+  localStorage.removeItem("bb_session_user");   
+  localStorage.removeItem("bb_session_ts");    
   clearCache();
+  currentUser       = null;
+  // ... rest unchanged
   currentUser       = null;
   liveData          = JSON.parse(JSON.stringify(SAMPLE_DATA));
   journalData       = null;
@@ -1719,7 +1746,7 @@ async function fetchProductionSheet(examCfg, sheetType) {
     // Parse meta values depending on sheet type
     let meta = {};
    if (sheetType === "records") {
-      // Scan label-value pairs: ["TARGET QTY","","65000","% TARGET MET","7.7%"]
+     
       meta.targetQty = 0;
       meta.targetMet = "0%";
       for (let ri = 0; ri < Math.min(raw.length, 6); ri++) {
@@ -1975,13 +2002,11 @@ async function loadAllData() {
     }
   });
 
-  // ── For non-production tabs: only re-render if the panel HTML is already built ──
-  // We do NOT call renderTab() on refresh — that would wipe the whole panel and
-  // lose filters. Instead we only push new data into the existing table rows.
+  
   const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
 
   if (currentTab === "overview") {
-    // Overview is stateless enough to re-render, but restore branch/type filters after
+
     renderTab("overview");
     set("activity-branch", saved.actBranch);
     set("activity-type",   saved.actType);
@@ -1996,8 +2021,7 @@ async function loadAllData() {
     renderSecRows();
 
   } else if (currentTab === "production") {
-    // State (prodExamIdx, prodSheetType) is already preserved in module vars.
-    // Just re-push new data into the existing DOM nodes.
+   
     renderProdKPIs(getProdData());
     renderProdCharts(getProdData());
     set("search-prod", saved.prodSearch);
