@@ -1221,8 +1221,8 @@ const USERS = [
   { username: "production1", password: "Prod@pass1",  name: "Mavis Oppong",       role: "staff",             dept: "production" },
   { username: "examsoffice", password: "Exam@pass1",  name: "Exam Officer",       role: "staff",             dept: "exams" },
   { username: "debtoffice",  password: "Debt@pass1",  name: "Debt Officer",       role: "staff",             dept: "debt" },
-  { username: "salesrep1",   password: "Sales@pass1", name: "Nicholas Adebayo",   role: "manager",           dept: "sales" }
-
+  { username: "salesrep1",   password: "Sales@pass1", name: "Nicholas Adebayo",   role: "manager",           dept: "sales" },
+{ username: "assistant",   password: "Myasst@2211",   name: "Dasitey Eunice Nketia",        role: "assistant",      dept: "all" }
 ];
 
 const PERMISSIONS = {
@@ -1234,8 +1234,10 @@ const PERMISSIONS = {
   accountant:        { canEdit: false, canDelete: false, seesFinance: true,  seesAll: true,  seesStaff: false, extraTabs: [] },
   secretary:         { canEdit: false, canDelete: false, seesFinance: true,  seesAll: false, seesStaff: false, extraTabs: [] },
   manager:           { canEdit: false, canDelete: false, seesFinance: false, seesAll: true,  seesStaff: false, extraTabs: [] },
-  staff:             { canEdit: false, canDelete: false, seesFinance: false, seesAll: false, seesStaff: false, extraTabs: [] }
+ staff:             { canEdit: false, canDelete: false, seesFinance: false, seesAll: false, seesStaff: false, extraTabs: [] },
+assistant:      { canEdit: false, canDelete: false, seesFinance: false, seesAll: false, seesStaff: true,  extraTabs: [] }
 };
+
 /* ══════════════════════════════════════════
    SAMPLE DATA
 ══════════════════════════════════════════ */
