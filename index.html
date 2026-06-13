@@ -29,7 +29,7 @@
   const db      = getFirestore(app);
   const storage = getStorage(app);
 
-  // Expose globally so staff.js can use them
+  
   window.__bbFB = { db, storage, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp, ref, uploadBytes, getDownloadURL };
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -78,7 +78,7 @@
   --font-mono:    'DM Mono', monospace;
 }
 
-/* ── LIGHT MODE ── */
+
 body.light {
   --bg:        #f0f3fa;
   --bg1:       #ffffff;
@@ -1012,14 +1012,14 @@ body.light .topbar { background: rgba(240,243,250,.9); }
     <div class="field-group">
       <label class="field-label" for="login-user">Username</label>
       <div class="field-wrap">
-        <span class="field-icon">👤</span>
+        <span class="field-icon"></span>
         <input class="login-input" id="login-user" type="text" placeholder="Enter username" autocomplete="username">
       </div>
     </div>
     <div class="field-group">
       <label class="field-label" for="login-pass">Password</label>
       <div class="field-wrap">
-        <span class="field-icon">🔑</span>
+        <span class="field-icon"></span>
         <input class="login-input" id="login-pass" type="password" placeholder="Enter password" autocomplete="current-password">
       </div>
     </div>
@@ -1054,7 +1054,7 @@ body.light .topbar { background: rgba(240,243,250,.9); }
     </div>
 
     <div class="sidebar-footer">
-      <button class="btn-footer" onclick="toggleTheme()" id="theme-btn">☀️ Light</button>
+      <button class="btn-footer" onclick="toggleTheme()" id="theme-btn"> Light</button>
       <button class="btn-footer" onclick="doLogout()">↩ Logout</button>
     </div>
   </nav>
@@ -1115,7 +1115,7 @@ body.light .topbar { background: rgba(240,243,250,.9); }
    CONFIG
 ══════════════════════════════════════════ */
 const CONFIG = {
-  GOOGLE_API_KEY: "AIzaSyBHOjTsT3bK3F-0tq99vhS_itfNCbS1xRc", // keep for non-secretary sheets for now
+  GOOGLE_API_KEY: "AIzaSyBHOjTsT3bK3F-0tq99vhS_itfNCbS1xRc", 
   REFRESH_INTERVAL: 30000,
   COMPANY_NAME: "Best Brain Ltd",
   SHEETS: {
@@ -1132,12 +1132,11 @@ const CONFIG = {
     sales:       "Sheet1",
     debt:        "Sheet1"
   },
-  // ← ADD THIS ONE LINE — paste your Web App URL here after deploying
+
+
   SECRETARY_PROXY: "https://script.google.com/macros/s/AKfycby_OMiIEiy0QHgsjbKw3RU5GGtOrAkShF-GY2f14S3stG636KhqXvyaYvi9FYnqdephUg/exec",
     EXAMS_PROXY: "https://script.google.com/macros/s/AKfycbyLTmD2zgW8EijzWvXwtX7lTUiC_CSSfTn57MvlTkKMqMtcyMhLVNJSSQ1uzMInNnoP/exec", 
-  // Production sheets: each exam has 4 named tabs. Add more exams here as they are created.
-  // Tab names must match exactly what's in the Google Sheet (truncated to 31 chars by Sheets).
- // ONE sheet ID for all production — tabs are auto-created per exam inside it
+  
   PRODUCTION_SHEET_ID: "1jAzgkn432EiOEw78H25wLIRoqmosfx40vDcX5LcHq1s",
 
   PRODUCTION_EXAMS: [
@@ -1176,9 +1175,9 @@ const BRANCHES = {
     label: "Greater Ghana Branch",
     short: "Greater Ghana",
     color: "#3d9cf5",
-    journalSheetId: "1341Pr7AlXwxBqjA3sJAmltm-kWL3HP0OV4nwGuSxEY0", // keep — used for overview KPI totals
+    journalSheetId: "1341Pr7AlXwxBqjA3sJAmltm-kWL3HP0OV4nwGuSxEY0", 
     journalTab: "JOURNAL ",
-    proxyUrl: CONFIG.SECRETARY_PROXY, // ← ADD THIS LINE
+    proxyUrl: CONFIG.SECRETARY_PROXY, 
 
      healthProxyUrl: "https://script.google.com/macros/s/AKfycbxUYUqtvMHt66SRVBTOBa8aM_1HKsuqd_Z2zhqgWOGNt133b_ofwntlAz6yGYKdTcTdaA/exec",
     active: true
@@ -1340,9 +1339,8 @@ let prodExamIdx    = 0;
 let prodSheetType  = "records";  
 let prodDataCache  = {};         
 
-/* ══════════════════════════════════════════
-   CACHE HELPERS  (localStorage persistence)
-══════════════════════════════════════════ */
+
+
 const CACHE_KEY_LIVE     = "bb_liveData";
 const CACHE_KEY_JOURNAL  = "bb_journalData";
 const CACHE_KEY_BRANCHES = "bb_branchJournals";
@@ -1415,7 +1413,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ── Check for a valid saved session ──
-  const SESSION_TIMEOUT_HOURS = 8; // adjust as needed
+  const SESSION_TIMEOUT_HOURS = 8; 
   const savedSession  = localStorage.getItem("bb_session_user");
   const savedSessionTs = localStorage.getItem("bb_session_ts");
 
@@ -1453,7 +1451,7 @@ document.addEventListener("keydown", e => {
 function applyTheme() {
   document.body.classList.toggle("light", !isDark);
   const btn = document.getElementById("theme-btn");
-  if (btn) btn.textContent = isDark ? "☀️ Light" : "🌙 Dark";
+  if (btn) btn.textContent = isDark ? "Light" : "Dark";
 }
 function toggleTheme() {
   isDark = !isDark;
@@ -1472,7 +1470,7 @@ function doLogin() {
   const user = USERS.find(x => x.username === u && x.password === p);
   if (!user) { err.style.display = "block"; return; }
   currentUser = user; err.style.display = "none";
-  // Persist session to localStorage with a timestamp
+  
   localStorage.setItem("bb_session_user", JSON.stringify(user));
   localStorage.setItem("bb_session_ts",   Date.now().toString());
   showApp();
@@ -1483,7 +1481,7 @@ function doLogout() {
   localStorage.removeItem("bb_session_ts");    
   clearCache();
   currentUser       = null;
-  // ... rest unchanged
+  
   currentUser       = null;
   liveData          = JSON.parse(JSON.stringify(SAMPLE_DATA));
   journalData       = null;
@@ -1509,7 +1507,7 @@ function showApp() {
   updateBranchBadge();
   buildNav();
 
-  // ── If cache exists, render instantly before network hits ──
+
   if (hasCachedData()) {
     const cacheTs  = localStorage.getItem(CACHE_KEY_TS);
     const cacheAge = cacheTs
@@ -1517,7 +1515,7 @@ function showApp() {
       : null;
     renderTab(currentTab);
     const label = cacheAge !== null ? "cached · " + cacheAge + "m ago" : "cached";
-    document.getElementById("last-update-top").textContent = "⏳ " + label;
+    document.getElementById("last-update-top").textContent = " " + label;
   }
 
   loadAllData();
@@ -1562,7 +1560,7 @@ function switchTab(id) {
   if (panel) panel.classList.add("active");
 const tab = TAB_CONFIG.find(t => t.id === id);
   document.getElementById("topbar-title").innerHTML = `${tab?.label || id}`;
-  // close mobile sidebar
+  
   document.getElementById("sidebar").classList.remove("open");
   renderTab(id);
 }
@@ -1572,11 +1570,11 @@ const tab = TAB_CONFIG.find(t => t.id === id);
 ══════════════════════════════════════════ */
 async function fetchSheet(key) {
 
-  // ── Exams sheet now goes through proxy (sheet stays private) ────
+ 
   if (key === "exams" && CONFIG.EXAMS_PROXY) {
     try {
       const url = CONFIG.EXAMS_PROXY + "?sheet=Sales";
-      // if you set EXAM_PROXY_SECRET in Apps Script add: + "&token=bestbrain2026"
+     
       const res  = await fetch(url);
       const json = await res.json();
       if (json.error || !json.rows || json.rows.length === 0) return null;
@@ -1589,7 +1587,7 @@ async function fetchSheet(key) {
         });
       }
 
-      // Fix submission IDs that came back as 1778526279814.0
+      
       json.rows.forEach(r => r.forEach((cell, ci) => {
         if (/^\d{5,}\.0$/.test(cell)) r[ci] = cell.slice(0, -2);
       }));
@@ -1601,7 +1599,7 @@ async function fetchSheet(key) {
     }
   }
 
-  // ── All other sheets still use the Google Sheets API for now ────
+
   const sid = CONFIG.SHEETS[key], tab = CONFIG.SHEET_TABS[key];
   if (!sid || sid.startsWith("YOUR_")) return null;
   try {
@@ -1661,14 +1659,14 @@ async function fetchJournalForBranch(branchKey) {
   if (branch.proxyUrl && branch.proxyUrl !== "") {
     try {
       const url = branch.proxyUrl + "?sheet=JOURNAL";
-      // If you set PROXY_SECRET in Apps Script, add: + "&token=bestbrain2026"
+     
       const res  = await fetch(url);
       const json = await res.json();
       if (json.error || !json.rows || json.rows.length === 0) return null;
 
      
       const rows = json.rows
-        .filter(r => r[2] && r[2].toString().trim() !== "") // must have purpose
+        .filter(r => r[2] && r[2].toString().trim() !== "") 
         .map(r => [
           r[1] || "",   // date
           r[2] || "",   // purpose
@@ -1690,7 +1688,7 @@ async function fetchJournalForBranch(branchKey) {
     }
   }
 
-  // ── Fallback: old Google Sheets API method (for branches without proxy yet) ──
+  
   const sid = branch.journalSheetId;
   const tab = branch.journalTab;
   if (!sid || sid.startsWith("PASTE_") || sid.startsWith("YOUR_")) return null;
@@ -1723,12 +1721,12 @@ async function fetchJournalForBranch(branchKey) {
     return null;
   }
 }
-// Fetches the current branch journal (used by Secretaries tab)
+
 async function fetchJournal() {
   return fetchJournalForBranch(currentBranch);
 }
 
-// ── Production: fetch one sheet tab from one exam ──
+
 async function fetchProductionSheet(examCfg, sheetType) {
   const sid = CONFIG.PRODUCTION_SHEET_ID;
   const tab = examCfg.tabs[sheetType];
@@ -1747,7 +1745,7 @@ async function fetchProductionSheet(examCfg, sheetType) {
     const headerRow  = raw[2] || [];
     const dataRows   = raw.slice(3).filter(r => r.some(c => c && c.toString().trim() !== "" && c.toString().trim().toUpperCase() !== "TOTALS"));
 
-    // Parse meta values depending on sheet type
+    
     let meta = {};
    if (sheetType === "records") {
      
@@ -1758,7 +1756,7 @@ async function fetchProductionSheet(examCfg, sheetType) {
         row.forEach((cell, i) => {
           const lbl = (cell||"").toString().toUpperCase();
           if (lbl.includes("TARGET QTY") || lbl.includes("TARGET QUANTITY")) {
-            // value may be 1 or 2 cells ahead — scan forward for first non-empty number
+        
             for (let j = i+1; j < Math.min(i+4, row.length); j++) {
               const n = parseFloat((row[j]||"").toString().replace(/,/g,""));
               if (!isNaN(n) && n > 0) { meta.targetQty = n; break; }
@@ -1777,7 +1775,7 @@ async function fetchProductionSheet(examCfg, sheetType) {
       meta.newSchools  = 0;
       meta.lateSchools = 0;
       dataRows.forEach(r => {
-        // Scan all cells for exact "New" or "Late" value
+     
         let status = "";
         for (let ci = r.length - 1; ci >= 0; ci--) {
           const v = (r[ci]||"").toString().trim();
@@ -1802,7 +1800,7 @@ async function fetchProductionSheet(examCfg, sheetType) {
       
       let nameCol = 1, newCol = 2, lateCol = 6, shortCol = 10;
 
-      // Scan first 4 rows for a header row to detect column positions
+     
       for (let ri = 0; ri < Math.min(raw.length, 4); ri++) {
         const row = raw[ri] || [];
         const joined = row.join("|").toUpperCase();
@@ -1818,9 +1816,9 @@ async function fetchProductionSheet(examCfg, sheetType) {
       }
 
 
-      const newMap  = {};  // name → new schools count
-      const lateMap = {};  // name → late schools count
-      const shortMap= {};  // name → shortages count
+      const newMap  = {};  
+      const lateMap = {};  
+      const shortMap= {};  
 
       const isDataRow = r => {
         const first = (r[0]||"").toString().trim().toUpperCase();
@@ -1866,17 +1864,6 @@ async function fetchProductionSheet(examCfg, sheetType) {
           shortages:  shortMap[name]|| 0
         }));
     }
-// if (sheetType === "rejected") {
-    //   const rejHeaderRow = raw[2] || [];
-    //   const rejDataRows  = raw.slice(3).filter(r => r.some(c => c && c.toString().trim() !== ""));
-    //   const totalAmt     = rejDataRows.reduce((s,r) => s + (parseFloat((r[4]||"").toString().replace(/[^0-9.]/g,""))||0), 0);
-    //   const byMarketer   = {};
-    //   rejDataRows.forEach(r => { const m=(r[5]||"Unknown").toString().trim(); byMarketer[m]=(byMarketer[m]||0)+1; });
-    //   meta.totalRejected = rejDataRows.length;
-    //   meta.totalAmount   = totalAmt;
-    //   meta.byMarketer    = byMarketer;
-    //   return { headers: rejHeaderRow, rows: rejDataRows, meta, examLabel: examCfg.label, term: examCfg.term, type: examCfg.type };
-    // }
 
     if (sheetType === "rejected") {
       const rejHeaderRow = raw[2] || [];
@@ -1897,7 +1884,7 @@ async function fetchProductionSheet(examCfg, sheetType) {
   }
 }
 
-// Fetch all 4 sheet types for the currently selected exam
+
 async function fetchCurrentProdExam() {
   const examCfg = CONFIG.PRODUCTION_EXAMS[prodExamIdx];
   if (!examCfg) return;
@@ -1907,10 +1894,10 @@ async function fetchCurrentProdExam() {
     const key = examCfg.id + "_" + t;
     if (results[i]) {
       prodDataCache[key] = results[i];
-      // persist to localStorage
+     
       try { localStorage.setItem("bb_prod_" + key, JSON.stringify(results[i])); } catch(e) {}
     } else {
-      // try restoring from cache
+      
       try {
         const cached = localStorage.getItem("bb_prod_" + key);
         if (cached && !prodDataCache[key]) prodDataCache[key] = JSON.parse(cached);
@@ -1929,7 +1916,7 @@ function getProdData() {
 
 
 async function loadAllData() {
-  // ── Snapshot ALL filter/UI state before anything touches the DOM ──
+  
   const saved = {
     actBranch:   document.getElementById("activity-branch")?.value  || "",
     actType:     document.getElementById("activity-type")?.value    || "",
@@ -1938,8 +1925,8 @@ async function loadAllData() {
     secTo:       document.getElementById("sec-to")?.value           || "",
     secBranch:   document.getElementById("sec-branch")?.value       || "",
     prodSearch:  document.getElementById("search-prod")?.value      || "",
-    prodExamIdx: prodExamIdx,      // saved from module-level state, not DOM
-    prodSheet:   prodSheetType,    // saved from module-level state, not DOM
+    prodExamIdx: prodExamIdx,      
+    prodSheet:   prodSheetType,    
     examRep:     document.getElementById("exam-rep")?.value         || "",
     examExam:    document.getElementById("exam-exam")?.value        || "",
     examType:    document.getElementById("exam-type")?.value        || "",
@@ -1970,7 +1957,7 @@ async function loadAllData() {
       ...activeBranchKeys.map(k => fetchJournalForBranch(k))
     ]);
 
-    // Merge only what actually came back — null/empty = keep existing cache
+   
     let gotSomething = false;
     keys.forEach((k, i) => {
       if (results[i] && results[i].rows && results[i].rows.length > 0) {
@@ -1996,10 +1983,10 @@ async function loadAllData() {
     console.warn("Fetch failed, using cached data:", err);
   }
 
-  // ── Fetch production silently in background — never re-renders the full panel ──
+
   fetchCurrentProdExam().then(() => {
     if (currentTab === "production") {
-      // Only patch the data-driven parts, never rebuild the whole panel
+     
       renderProdKPIs(getProdData());
       renderProdCharts(getProdData());
       renderProdRows();
@@ -2017,7 +2004,7 @@ async function loadAllData() {
     renderActivityTable();
 
   } else if (currentTab === "secretaries") {
-    // Only rebuild rows, not the whole panel (charts stay, KPIs stay)
+   
     set("search-sec", saved.secSearch);
     set("sec-from",   saved.secFrom);
     set("sec-to",     saved.secTo);
@@ -2080,7 +2067,7 @@ async function loadAllData() {
     const label = cacheAge !== null ? "cached · " + cacheAge + "m ago" : "offline";
     document.getElementById("last-update-top").textContent = "⚠ " + label;
   }
-  loadAllData._isAutoRefresh = true;  // subsequent calls are silent
+  loadAllData._isAutoRefresh = true; 
 }
 
 function startRefresh() {
@@ -2096,7 +2083,7 @@ function renderTab(id) {
   if (!panel) return;
   const tab = TAB_CONFIG.find(t => t.id === id);
   if (tab?.restricted && !PERMISSIONS[currentUser.role].seesFinance) {
-    panel.innerHTML = `<div class="restricted-wrap"><div class="restricted-icon">🔒</div><h3>Access Restricted</h3><p>This section is available to MD, Chief Director, Accountant and Super Admin only.</p></div>`;
+    panel.innerHTML = `<div class="restricted-wrap"><div class="restricted-icon"></div><h3>Access Restricted</h3><p>This section is available to MD, Chief Director, Accountant and Super Admin only.</p></div>`;
     return;
   }
  switch(id) {
@@ -2128,7 +2115,7 @@ function mkChart(id, cfg) {
   c._ci = new Chart(c, cfg); return c._ci;
 }
 
-/* format a cell by header */
+
 function fCell(val, hdr) {
   if (val === undefined || val === null || val === "" || val === "—") return `<span style="color:var(--text3)">—</span>`;
   const h = (hdr||"").toLowerCase();
@@ -2156,7 +2143,7 @@ function fCell(val, hdr) {
   return val;
 }
 
-/* build a standard table */
+
 function buildTable(data, filterFn, opts={}) {
   const { canEdit=false, canDelete=false, dataKey="" } = opts;
   const filtered = filterFn ? data.rows.filter(filterFn) : data.rows;
@@ -2222,25 +2209,25 @@ function renderOverview(panel) {
       <div class="kpi-label">Total Cash In</div>
       <div class="kpi-value">${ghs(cashIn)}</div>
       <div class="kpi-sub">All collections</div>
-      <div class="kpi-icon">💵</div>
+      <div class="kpi-icon"></div>
     </div>
     <div class="kpi-card red"><div class="kpi-glow"></div>
       <div class="kpi-label">Total Cash Out</div>
       <div class="kpi-value">${ghs(cashOut)}</div>
       <div class="kpi-sub">Total expenditure</div>
-      <div class="kpi-icon">📤</div>
+      <div class="kpi-icon"></div>
     </div>
    <div class="kpi-card amber"><div class="kpi-glow"></div>
       <div class="kpi-label">Total Exam Bills</div>
       <div class="kpi-value">${ghs(salesTot)}</div>
       <div class="kpi-sub">From exams registrations</div>
-      <div class="kpi-icon">📈</div>
+      <div class="kpi-icon"></div>
     </div>
   <div class="kpi-card purple"><div class="kpi-glow"></div>
       <div class="kpi-label">Net Balance</div>
       <div class="kpi-value">${ghs(netBalance)}</div>
       <div class="kpi-sub">All branches combined</div>
-      <div class="kpi-icon">⚖️</div>
+      <div class="kpi-icon"></div>
     </div>` : "";
 
   panel.innerHTML = `
@@ -2250,19 +2237,19 @@ function renderOverview(panel) {
         <div class="kpi-label">Schools Registered</div>
        <div class="kpi-value">${schools}</div>
 <div class="kpi-sub">${cands.toLocaleString()} candidates</div>
-        <div class="kpi-icon">🏫</div>
+        <div class="kpi-icon"></div>
       </div>
       <div class="kpi-card teal"><div class="kpi-glow"></div>
         <div class="kpi-label">Papers from Press</div>
         <div class="kpi-value">${prodUnits.toLocaleString()}</div>
         <div class="kpi-sub">${prodR.length} batches</div>
-        <div class="kpi-icon">🏭</div>
+        <div class="kpi-icon"></div>
       </div>
       <div class="kpi-card orange"><div class="kpi-glow"></div>
         <div class="kpi-label">Outstanding Debt</div>
         <div class="kpi-value">${ghs(debtTot)}</div>
         <div class="kpi-sub">${debR.filter(r=>parseFloat(r[7]||0)>0).length} records</div>
-        <div class="kpi-icon">⚠️</div>
+        <div class="kpi-icon"></div>
       </div>
     </div>
 
@@ -2338,7 +2325,7 @@ function renderActivityTable() {
   const branchFilter = document.getElementById("activity-branch")?.value || "";
   const typeFilter   = document.getElementById("activity-type")?.value   || "";
 
- // Build rows: only branches with a real sheet linked (not placeholder IDs)
+ 
   let rows = [];
   Object.entries(allBranchJournals).forEach(([bk, jd]) => {
     const b = BRANCHES[bk];
@@ -2715,7 +2702,7 @@ async function selectBranch(key) {
   if (currentTab === "secretaries") document.getElementById("panel-secretaries").innerHTML = loading();
   if (currentTab === "finance")     document.getElementById("panel-finance").innerHTML = loading();
 
-  // Reload current branch journal + all branch journals for cross-branch KPIs
+  
   const activeBranchKeys = Object.keys(BRANCHES).filter(k => BRANCHES[k].active);
   const [jData, ...branchResults] = await Promise.all([
     fetchJournal(),
@@ -2750,7 +2737,7 @@ function updateBranchBadge() {
 async function renderProduction(panel) {
   const exams = CONFIG.PRODUCTION_EXAMS;
   if (!exams || exams.length === 0) {
-    panel.innerHTML = `<div class="restricted-wrap"><div class="restricted-icon">🏭</div><h3>No Exams Configured</h3><p>Add exam entries to CONFIG.PRODUCTION_EXAMS to get started.</p></div>`;
+    panel.innerHTML = `<div class="restricted-wrap"><div class="restricted-icon"></div><h3>No Exams Configured</h3><p>Add exam entries to CONFIG.PRODUCTION_EXAMS to get started.</p></div>`;
     return;
   }
 
@@ -2769,7 +2756,7 @@ async function renderProduction(panel) {
        ${["records","newlate","shortages","charts","rejected"].map(t => `
   <button id="prod-tab-${t}" class="chart-tab ${prodSheetType===t?"active":""}"
     onclick="switchProdSheet('${t}')" style="padding:6px 14px;font-size:12px">
-    ${{records:"📋 Records",newlate:"🏫 New / Late",shortages:"⚠️ Shortages",charts:"📊 Charts",rejected:"🚫 Rejected"}[t]}
+    ${{records:"Records",newlate:"New / Late",shortages:"Shortages",charts:"Charts",rejected:"Rejected"}[t]}
   </button>`).join("")}
       </div>
       <!-- Branch toggle (replaces Supervisor) -->
@@ -3155,13 +3142,7 @@ async function switchProdSheet(type) {
 
 function filterProd() { renderProdRows(); }
 
-/* ══════════════════════════════════════════
-   EXAMS
-══════════════════════════════════════════ */
-// ── EXAM helpers ──
-// Cols: 0=TIMESTAMP,1=SUBMISSION ID,2=REP ID,3=REGION,4=EXAM TYPE,5=SCHOOL,
-//       6=LOCATION,7=PHONE,8=NS,9=KG1,10=KG2,11=B1,12=B2,13=B3,14=B4,
-//       15=B5,16=B6,17=B7,18=B8,19=LANGUAGE,20=FRENCH,21=BILL
+
 function examCandidates(r) {
   return [8,9,10,11,12,13,14,15,16,17,18].reduce((s,i) => s + (parseInt(r[i])||0), 0);
 }
@@ -3196,19 +3177,19 @@ const GRADE_COLS = [8,9,10,11,12,13,14,15,16,17,18]; // ← already correct!
         <div class="kpi-label">Total Schools</div>
         <div class="kpi-value">${totalSchools.toLocaleString()}</div>
 <div class="kpi-sub">${d.rows.length} registered schools</div>
-        <div class="kpi-icon">🏫</div>
+        <div class="kpi-icon"></div>
       </div>
       <div class="kpi-card teal"><div class="kpi-glow"></div>
         <div class="kpi-label">Total Candidates</div>
         <div class="kpi-value">${totalCands.toLocaleString()}</div>
         <div class="kpi-sub">NS · KG · B1–B8</div>
-        <div class="kpi-icon">👨‍🎓</div>
+        <div class="kpi-icon"></div>
       </div>
       <div class="kpi-card green"><div class="kpi-glow"></div>
         <div class="kpi-label">Total Bill</div>
         <div class="kpi-value">${ghs(totalBill)}</div>
         <div class="kpi-sub">All registrations</div>
-        <div class="kpi-icon">💰</div>
+        <div class="kpi-icon"></div>
       </div>
    
     </div>
@@ -3757,12 +3738,12 @@ function renderFinance(panel) {
   
 
     <div class="kpi-grid">
-      <div class="kpi-card green"><div class="kpi-glow"></div><div class="kpi-label">Total Inflows — All Branches</div><div class="kpi-value">${ghs(finTotalIn)}</div><div class="kpi-sub">Combined cash in</div><div class="kpi-icon">💵</div></div>
-      <div class="kpi-card red"><div class="kpi-glow"></div><div class="kpi-label">Total Outflows — All Branches</div><div class="kpi-value">${ghs(finTotalOut)}</div><div class="kpi-sub">Combined expenditure</div><div class="kpi-icon">📤</div></div>
-      <div class="kpi-card teal"><div class="kpi-glow"></div><div class="kpi-label">Total Balance — All Branches</div><div class="kpi-value">${ghs(finBalance)}</div><div class="kpi-sub">Running net balance</div><div class="kpi-icon">⚖️</div></div>
-      <div class="kpi-card blue"><div class="kpi-glow"></div><div class="kpi-label">Total Cash — All Branches</div><div class="kpi-value">${ghs(finTotalCash)}</div><div class="kpi-sub">Gross cash received</div><div class="kpi-icon">🏦</div></div>
-     <div class="kpi-card amber"><div class="kpi-glow"></div><div class="kpi-label">Total Exam Bills</div><div class="kpi-value">${ghs(salesTot)}</div><div class="kpi-sub">From exams registrations</div><div class="kpi-icon">📈</div></div>
-      <div class="kpi-card orange"><div class="kpi-glow"></div><div class="kpi-label">Outstanding Debt</div><div class="kpi-value">${ghs(debtTot)}</div><div class="kpi-sub">${recRate}% recovery rate</div><div class="kpi-icon">⚠️</div></div>
+      <div class="kpi-card green"><div class="kpi-glow"></div><div class="kpi-label">Total Inflows — All Branches</div><div class="kpi-value">${ghs(finTotalIn)}</div><div class="kpi-sub">Combined cash in</div><div class="kpi-icon"></div></div>
+      <div class="kpi-card red"><div class="kpi-glow"></div><div class="kpi-label">Total Outflows — All Branches</div><div class="kpi-value">${ghs(finTotalOut)}</div><div class="kpi-sub">Combined expenditure</div><div class="kpi-icon"></div></div>
+      <div class="kpi-card teal"><div class="kpi-glow"></div><div class="kpi-label">Total Balance — All Branches</div><div class="kpi-value">${ghs(finBalance)}</div><div class="kpi-sub">Running net balance</div><div class="kpi-icon"></div></div>
+      <div class="kpi-card blue"><div class="kpi-glow"></div><div class="kpi-label">Total Cash — All Branches</div><div class="kpi-value">${ghs(finTotalCash)}</div><div class="kpi-sub">Gross cash received</div><div class="kpi-icon"></div></div>
+     <div class="kpi-card amber"><div class="kpi-glow"></div><div class="kpi-label">Total Exam Bills</div><div class="kpi-value">${ghs(salesTot)}</div><div class="kpi-sub">From exams registrations</div><div class="kpi-icon"></div></div>
+      <div class="kpi-card orange"><div class="kpi-glow"></div><div class="kpi-label">Outstanding Debt</div><div class="kpi-value">${ghs(debtTot)}</div><div class="kpi-sub">${recRate}% recovery rate</div><div class="kpi-icon"></div></div>
     </div>
 
     <div class="charts-row" style="margin-bottom:24px">
@@ -3816,7 +3797,7 @@ setTimeout(() => {
     const inData  = last7.map(d => byDate[d].in);
     const outData = last7.map(d => byDate[d].out);
 
-    // ── Revenue vs Expenses: real inflow/outflow by date ──
+
     mkChart("chart-fin-bar", {
       type: "bar",
       data: {
@@ -3836,7 +3817,7 @@ setTimeout(() => {
       }
     });
 
-    // ── Financial Overview donut: real figures ──
+
     mkChart("chart-fin-pie", {
       type: "doughnut",
       data: {
@@ -3854,7 +3835,7 @@ setTimeout(() => {
       }
     });
 
-    // ── Cash In trend: real data ──
+   
     mkChart("chart-fin-in", {
       type: "line",
       data: {
@@ -3877,7 +3858,7 @@ setTimeout(() => {
       }
     });
 
-    // ── Cash Out trend: real data ──
+    
     mkChart("chart-fin-out", {
       type: "line",
       data: {
@@ -3900,7 +3881,7 @@ setTimeout(() => {
       }
     });
 
-    // ── Replacement for Sales vs Commissions: Debt Recovery by Exam ──
+  
     const examDebtMap = {};
     debR.forEach(r => {
       const exam = (r[1] || "Unknown").toString().trim();
@@ -3938,7 +3919,7 @@ function renderFinLog() {
   const to           = document.getElementById("fin-to")?.value     || "";
   const q            = (document.getElementById("search-finance")?.value || "").toLowerCase();
 
- // Gather rows — only branches with a real sheet ID linked
+ 
   let rows = [];
   Object.entries(allBranchJournals).forEach(([bk, jd]) => {
     const b = BRANCHES[bk];
@@ -3948,7 +3929,7 @@ function renderFinLog() {
     (jd.rows || []).forEach(r => {
       const inAmt  = parseFloat(r[5]||0);
       const outAmt = parseFloat(r[6]||0);
-      if (inAmt === 0 && outAmt === 0) return; // skip empty rows
+      if (inAmt === 0 && outAmt === 0) return; 
       rows.push({ branch: bk, branchLabel: b.short, branchColor: b.color,
         date: r[0], purpose: r[1], category: r[2],
         receiver: r[3], authBy: r[4], inflow: inAmt, outflow: outAmt, balance: r[7]||"" });
@@ -4235,15 +4216,8 @@ function renderHealthContent() {
   healthSubTab === "database" ? renderHealthDatabase(area) : renderHealthReport(area);
 }
 
-/* ─────────────────────────────────────────
-   DATABASE TAB
-   Columns (proxy row indices):
-   [0]=blank [1]=DATE [2]=STAFF NAME [3]=DESIGNATION
-   [4]=CONTACT [5]=MEDICAL CONDITION [6]=ALLERGIES
-   [7]=INS.STATUS [8]=LAST CHECKUP [9]=REMARK
-   [10]=FIRST AID [11]=ASSESSMENT OFFICER
-   [12]=HOSPITAL ADMITTED [13]=HOSPITAL BILL
-───────────────────────────────────────── */
+
+
 function renderHealthDatabase(area) {
   area.innerHTML = `
     <div class="sh" style="margin-bottom:12px">
@@ -4366,14 +4340,7 @@ function renderHealthDbRows() {
   </div>`;
 }
 
-/* ─────────────────────────────────────────
-   REPORT TAB
-   Replicates the REPORT sheet:
-   Top: Staff selector + Total Bill
-   Below: date · condition · allergies ·
-          insurance · last checkup · remark ·
-          first aid · hospital · bill
-───────────────────────────────────────── */
+
 function renderHealthReport(area) {
   const allRows    = (healthData?.rows || []).filter(r => (r[2]||"").toString().trim() !== "");
   const staffNames = [...new Set(allRows.map(r => (r[2]||"").toString().trim()))]
@@ -4729,7 +4696,7 @@ const FORM_SECTIONS = [
   { key: "preview",    label: "Preview",           icon: "👁" }
 ];
 
-/* Required field map: section key → array of field IDs */
+
 const REQUIRED_FIELDS = {
   personal:   ["sf-fullname","sf-gender","sf-dob","sf-nationality","sf-ghana-card","sf-ssnit","sf-nhis","sf-marital","sf-hometown","sf-address","sf-mobile","sf-emergency-contact"],
   employment: ["sf-employment-date","sf-branch","sf-department","sf-position","sf-emp-status","sf-reporting-officer","sf-confirm-date","sf-bank-name","sf-bank-account","sf-bank-branch"],
@@ -6057,7 +6024,7 @@ function buildPreviewHTML() {
       <div class="fill-bar-track" style="height:10px;margin-bottom:${missing.length?"10px":"0"}">
         <div class="fill-bar-fill" style="width:${rate}%;background:${barColor}"></div>
       </div>
-      ${rate < 80 ? `<div style="font-size:12px;color:var(--amber);margin-top:6px">⚠️ Fill rate must be at least 80% to submit. Please complete the missing fields below.</div>` : ""}
+      ${rate < 80 ? `<div style="font-size:12px;color:var(--amber);margin-top:6px"> Fill rate must be at least 80% to submit. Please complete the missing fields below.</div>` : ""}
     </div>
 
     ${missing.length ? `
@@ -6240,7 +6207,7 @@ function formPrev() {
 function handlePassportUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
-  if (file.size > 2 * 1024 * 1024) { showToast("⚠️ Photo must be under 2MB"); return; }
+  if (file.size > 2 * 1024 * 1024) { showToast("Photo must be under 2MB"); return; }
   addStaffFiles.passport = file;
   const reader = new FileReader();
   reader.onload = ev => {
@@ -6264,11 +6231,11 @@ function handleDocUpload(e) {
   const list = document.getElementById("doc-file-list");
   if (list) {
     list.innerHTML = addStaffFiles.documents.map((f,i)=>`<div class="doc-item">
-      <span style="font-size:15px">📄</span>
+      <span style="font-size:15px"></span>
       <span class="doc-item-name">${f.name}</span>
       <span class="doc-remove" onclick="removeDoc(${i})">✕</span>
     </div>`).join("") + (addStaffDraft.documentUrls||[]).map(d=>`<div class="doc-item">
-      <span style="font-size:15px">📄</span>
+      <span style="font-size:15px"></span>
       <span class="doc-item-name"><a href="${d.url}" target="_blank" style="color:var(--blue)">${d.name}</a></span>
     </div>`).join("");
   }
@@ -6278,7 +6245,7 @@ function removeDoc(idx) {
   addStaffFiles.documents.splice(idx, 1);
   const list = document.getElementById("doc-file-list");
   if (list) list.innerHTML = addStaffFiles.documents.map((f,i)=>`<div class="doc-item">
-    <span>📄</span><span class="doc-item-name">${f.name}</span>
+    <span></span><span class="doc-item-name">${f.name}</span>
     <span class="doc-remove" onclick="removeDoc(${i})">✕</span>
   </div>`).join("");
 }
@@ -6369,8 +6336,7 @@ async function submitStaffForm() {
       }
     });
 
-    // Base64 photos are too large for Firestore (1MB limit per doc)
-    // Compress to a small thumbnail if it's a data URL
+    
     let finalPhotoUrl = passportUrl;
     if (finalPhotoUrl && finalPhotoUrl.startsWith("data:image")) {
       finalPhotoUrl = await compressToThumbnail(finalPhotoUrl, 200, 0.7);
