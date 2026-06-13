@@ -2541,9 +2541,9 @@ const sourceRows = Object.entries(sourceTotals).sort((a,b) => b[1]-a[1])
 
   panel.innerHTML = `
     <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px">
-      <div class="kpi-card green"><div class="kpi-glow"></div><div class="kpi-label">Total Inflows</div><div class="kpi-value">${ghs(totalIn)}</div><div class="kpi-icon">\uD83D\uDCB5</div></div>
-      <div class="kpi-card red"><div class="kpi-glow"></div><div class="kpi-label">Total Outflows</div><div class="kpi-value">${ghs(totalOut)}</div><div class="kpi-icon">\uD83D\uDCE4</div></div>
-      <div class="kpi-card ${balance>=0?"blue":"red"}"><div class="kpi-glow"></div><div class="kpi-label">Balance</div><div class="kpi-value">${ghs(balance)}</div><div class="kpi-icon">\u2696\uFE0F</div></div>
+      <div class="kpi-card green"><div class="kpi-glow"></div><div class="kpi-label">Total Inflows</div><div class="kpi-value">${ghs(totalIn)}</div></div>
+      <div class="kpi-card red"><div class="kpi-glow"></div><div class="kpi-label">Total Outflows</div><div class="kpi-value">${ghs(totalOut)}</div></div>
+      <div class="kpi-card ${balance>=0?"blue":"red"}"><div class="kpi-glow"></div><div class="kpi-label">Balance</div><div class="kpi-value">${ghs(balance)}</div></div>
     </div>
   <div class="charts-row" style="grid-template-columns:1.6fr 1fr;margin-bottom:24px">
       <div class="chart-card"><h4>Daily Cash Flow</h4><canvas id="chart-sec-flow" height="180"></canvas></div>
@@ -3592,9 +3592,9 @@ function renderDebt(panel) {
 
   panel.innerHTML = `
     <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
-      <div class="kpi-card red"><div class="kpi-glow"></div><div class="kpi-label">Outstanding</div><div class="kpi-value">${ghs(totalDue)}</div><div class="kpi-icon">⚠️</div></div>
-      <div class="kpi-card orange"><div class="kpi-glow"></div><div class="kpi-label">Schools in Debt</div><div class="kpi-value">${schoolsWithDebt}</div><div class="kpi-icon">🏫</div></div>
-      <div class="kpi-card blue"><div class="kpi-glow"></div><div class="kpi-label">Total Invoiced</div><div class="kpi-value">${ghs(totalOwed)}</div><div class="kpi-icon">📄</div></div>
+      <div class="kpi-card red"><div class="kpi-glow"></div><div class="kpi-label">Outstanding</div><div class="kpi-value">${ghs(totalDue)}</div><div class="kpi-icon"></div></div>
+      <div class="kpi-card orange"><div class="kpi-glow"></div><div class="kpi-label">Schools in Debt</div><div class="kpi-value">${schoolsWithDebt}</div><div class="kpi-icon"></div></div>
+      <div class="kpi-card blue"><div class="kpi-glow"></div><div class="kpi-label">Total Invoiced</div><div class="kpi-value">${ghs(totalOwed)}</div><div class="kpi-icon"></div></div>
       <div class="kpi-card green"><div class="kpi-glow"></div><div class="kpi-label">Collected</div><div class="kpi-value">${ghs(totalPaid)}</div><div class="kpi-sub">${recovery}% recovery</div><div class="kpi-icon"></div></div>
     </div>
     <div class="charts-row" style="margin-bottom:24px">
