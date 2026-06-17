@@ -1136,8 +1136,75 @@ const CONFIG = {
 
   SECRETARY_PROXY: "https://script.google.com/macros/s/AKfycby_OMiIEiy0QHgsjbKw3RU5GGtOrAkShF-GY2f14S3stG636KhqXvyaYvi9FYnqdephUg/exec",
     EXAMS_PROXY: "https://script.google.com/macros/s/AKfycbyLTmD2zgW8EijzWvXwtX7lTUiC_CSSfTn57MvlTkKMqMtcyMhLVNJSSQ1uzMInNnoP/exec", 
-  
+  SALES_PROXY: "https://script.google.com/macros/s/AKfycbyTJhq4vaDk8k_21I6f2d7iTCz2tNSdkRPASYOIQpO_Z9UuOi39qvmdgY61BsqGK959EA/exec",
   PRODUCTION_SHEET_ID: "1jAzgkn432EiOEw78H25wLIRoqmosfx40vDcX5LcHq1s",
+  SALES_SHEET_ID: "1Vg-NikFVSiU_GNOaZedxSXEE1tvMN6KXCwktNxp0DQI",
+
+SALES_BRANCHES: {
+  "G-GHANA": {
+    label: "Greater Ghana",
+    sheetName: "G-GHAANA",
+    color: "#3d9cf5",
+    reps: [
+      { name: "TURKSON",    sheet: "TURKSON"   },
+      { name: "NICHOLAS",   sheet: "NICHOLAS"  },
+      { name: "MAVIS",      sheet: "MAVIS"     },
+      { name: "FORTUNE",    sheet: "FORTUNE"   },
+      { name: "MARY",       sheet: "MARY"      },
+      { name: "ELIZABETH",  sheet: "ELIZABETH" },
+      { name: "GEOFFREY",   sheet: "GEOFFREY"  },
+      { name: "HASSAN",     sheet: "HASSAN"    },
+      { name: "MATILDA",    sheet: "MATILDA"   },
+      { name: "DANIEL",     sheet: "DANIEL"    },
+      { name: "EMERALD",    sheet: "EMERALD"   },
+      { name: "VANESSA",    sheet: "VANESSA"   },
+      { name: "RITA",       sheet: "RITA"      },
+      { name: "GOTTFRIED",  sheet: "GOTTFRIED" },
+      { name: "NATHANIEL",  sheet: "NATHANIEL" },
+      { name: "RICHARD",    sheet: "RICHARD"   },
+      { name: "NII",        sheet: "NII"       },
+      { name: "MR ATSU",    sheet: null        },
+      { name: "MR. NARTEY", sheet: null        },
+      { name: "FRANCIS",    sheet: "FRANCIS"   },
+      { name: "MR STEPHEN", sheet: null        }
+    ]
+  },
+  "U-GHANA": {
+    label: "Upper Ghana",
+    sheetName: "U-GHANA",
+    color: "#00e5a0",
+    reps: [
+      { name: "PRISCILA", sheet: "PRISCILA" },
+      { name: "JOAN",     sheet: "JOAN"     },
+      { name: "COSMOS",   sheet: "COSMOS"   },
+      { name: "OWUSU",    sheet: "OWUSU"    },
+      { name: "CYNTHIA",  sheet: "CYNTHIA"  },
+      { name: "COLLINS",  sheet: "COLLINS"  },
+      { name: "JAKON",    sheet: "JAKON"    },
+      { name: "ALBERT",   sheet: "ALBERT"   },
+      { name: "GABRIEL",  sheet: "GABRIEL"  },
+      { name: "ABDUL",    sheet: "ABDUL"    },
+      { name: "JACKLINE", sheet: "JACKLINE" },
+      { name: "DRAMANI",  sheet: "DRAMANI"  },
+      { name: "IBRAHIM",  sheet: "IBRAHIM"  },
+      { name: "SANDRA",   sheet: "SANDRA"   },
+      { name: "MIKE",     sheet: "MIKE"     }
+    ]
+  },
+  "C-GHANA": {
+    label: "Central Ghana",
+    sheetName: "C-GHANA",
+    color: "#ffb830",
+    reps: [
+      { name: "CYRIL",    sheet: "CYRIL"    },
+      { name: "JEMIMA",   sheet: "JEMIMA"   },
+      { name: "EMMANUEL", sheet: "EMMANUEL" },
+      { name: "AIKINS",   sheet: "AIKINS"   },
+      { name: "NADIA",    sheet: "NADIA"    },
+      { name: "MAXWELL",  sheet: "MAXWELL"  }
+    ]
+  }
+},
 
   PRODUCTION_EXAMS: [
     {
@@ -1219,7 +1286,7 @@ const USERS = [
   { username: "accountant",  password: "Acct@2024",   name: "Accountant",         role: "accountant",        dept: "all" },
   { username: "secretary1",  password: "Sec@pass1",   name: "Secretaries",        role: "secretary",         dept: "secretaries" },
   { username: "production1", password: "Prod@pass1",  name: "Mavis Oppong",       role: "staff",             dept: "production" },
-  { username: "examsoffice", password: "Exam@pass1",  name: "Exam Officer",       role: "staff",             dept: "exams" },
+ { username: "examsoffice", password: "Exam@office2026",  name: "Gabriel Amenyo",       role: "exams_cordinator",     dept: "exams" },
   { username: "debtoffice",  password: "Debt@pass1",  name: "Debt Officer",       role: "staff",             dept: "debt" },
   { username: "salesrep1",   password: "Sales@pass1", name: "Nicholas Adebayo",   role: "manager",           dept: "sales" },
 { username: "assistant",   password: "Myasst@2211",   name: "Adepa Eunice",        role: "assistant",      dept: "all" }
@@ -1235,7 +1302,8 @@ const PERMISSIONS = {
   accountant:        { canEdit: false, canDelete: false, seesFinance: true,  seesAll: true,  seesStaff: false, extraTabs: [] },
   secretary:         { canEdit: false, canDelete: false, seesFinance: true,  seesAll: false, seesStaff: false, extraTabs: [] },
   manager:           { canEdit: false, canDelete: false, seesFinance: false, seesAll: true,  seesStaff: false, extraTabs: [] },
- staff:             { canEdit: false, canDelete: false, seesFinance: false, seesAll: false, seesStaff: false, extraTabs: [] },
+staff:             { canEdit: false, canDelete: false, seesFinance: false, seesAll: false, seesStaff: false, extraTabs: [] },
+  exams_cordinator:     { canEdit: false, canDelete: false, seesFinance: false, seesAll: false, seesStaff: false, extraTabs: [] },
 assistant:      { canEdit: false, canDelete: false, seesFinance: false, seesAll: false, seesStaff: true,  extraTabs: [] }
 };
 
@@ -1381,6 +1449,7 @@ const NAV_ICONS = {
   secretaries: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/><line x1="8" y1="9" x2="10" y2="9"/></svg>`,
   production:  `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>`,
   exams:       `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>`,
+ sales: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`,
   debt:        `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/><line x1="12" y1="6" x2="12" y2="6.01"/></svg>`,
   finance:     `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg>`,
 staff: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
@@ -1388,16 +1457,16 @@ health: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="cur
 };
 
 const TAB_CONFIG = [
-  { id:"overview",    label:"Overview",        dept:"all",         restricted:false, staffOnly:false },
-  { id:"secretaries", label:"Secretaries",     dept:"secretaries", restricted:false, staffOnly:false },
-  { id:"production",  label:"Production",      dept:"production",  restricted:false, staffOnly:false },
-  { id:"exams",       label:"Exams Office",    dept:"exams",       restricted:false, staffOnly:false },
-  { id:"debt",        label:"Debt Office",     dept:"debt",        restricted:false, staffOnly:false },
-  { id:"finance",     label:"Finance Summary", dept:"all",         restricted:true,  staffOnly:false },
-  { id:"staff",       label:"Staff",           dept:"all",         restricted:false, staffOnly:true  },
-  { id:"health",      label:"Health Data",     dept:"all",         restricted:false, staffOnly:false, healthOnly:true }
+  { id:"overview",    label:"Overview",            dept:"all",         restricted:false, staffOnly:false },
+  { id:"secretaries", label:"Secretaries",         dept:"secretaries", restricted:false, staffOnly:false },
+  { id:"production",  label:"Production",          dept:"production",  restricted:false, staffOnly:false },
+  { id:"exams",       label:"Registration Portal", dept:"exams",       restricted:false, staffOnly:false },
+  { id:"sales",       label:"Exams Office",        dept:"sales",       restricted:false, staffOnly:false },
+  { id:"debt",        label:"Debt Office",         dept:"debt",        restricted:false, staffOnly:false },
+  { id:"finance",     label:"Finance Summary",     dept:"all",         restricted:true,  staffOnly:false },
+  { id:"staff",       label:"Staff",               dept:"all",         restricted:false, staffOnly:true  },
+  { id:"health",      label:"Health Data",         dept:"all",         restricted:false, staffOnly:false, healthOnly:true }
 ];
-
 /* ══════════════════════════════════════════
    BOOT
 ══════════════════════════════════════════ */
@@ -1530,11 +1599,11 @@ function canSeeTab(tab) {
   if (tab.restricted) return p.seesFinance;
   if (tab.dept === "all") return true;
   if (p.seesAll) return true;
-  if (currentUser.dept === "exams" && ["production","debt"].includes(tab.id)) return true;
+ if (currentUser.dept === "exams" && ["production","debt","sales"].includes(tab.id)) return true;
+  if (currentUser.role === "exams_cordinator" && ["production","debt","sales"].includes(tab.id)) return true;
   if (currentUser.dept === "production" && tab.id === "exams") return true;
   return tab.dept === currentUser.dept;
 }
-
 function buildNav() {
   const nl = document.getElementById("nav-links");
   nl.innerHTML = `<div class="nav-section-label">Navigation</div>`;
@@ -1932,9 +2001,8 @@ async function loadAllData() {
     examType:    document.getElementById("exam-type")?.value        || "",
     examRegion:  document.getElementById("exam-region")?.value      || "",
     examSearch:  document.getElementById("search-exam")?.value      || "",
-    salesRep:    document.getElementById("sales-rep")?.value        || "",
-    salesExam:   document.getElementById("sales-exam")?.value       || "",
-    salesSearch: document.getElementById("search-sales")?.value     || "",
+   salesRepSaved:    salesRep    || "",
+salesViewSaved:   salesView   || "general",
     debtRep:     document.getElementById("debt-rep")?.value         || "",
     debtExam:    document.getElementById("debt-exam")?.value        || "",
     debtStatus:  document.getElementById("debt-status")?.value      || "",
@@ -2025,11 +2093,11 @@ async function loadAllData() {
     set("search-exam", saved.examSearch);
     renderExamRows();
 
-  } else if (currentTab === "sales") {
-    set("sales-rep",    saved.salesRep);
-    set("sales-exam",   saved.salesExam);
-    set("search-sales", saved.salesSearch);
-    renderSalesRows();
+ } else if (currentTab === "sales") {
+    // Sales: only silently update data cache, never re-render UI on background refresh
+    // The tab preserves its own state (salesView, salesRep, filters)
+    // KPIs update automatically when rep sheets finish loading
+    // Do nothing here — user interaction drives rendering
 
   } else if (currentTab === "debt") {
     set("debt-rep",    saved.debtRep);
@@ -2175,7 +2243,7 @@ function renderOverview(panel) {
   const salR  = liveData.sales?.rows       || [];
   const debR  = liveData.debt?.rows        || [];
 
-// Cross-branch journal totals — ONLY branches with a real sheet ID linked
+  // Cross-branch journal totals — ONLY branches with a real sheet ID linked
   const linkedBranchKeys = Object.keys(BRANCHES).filter(k => {
     const b = BRANCHES[k];
     return b.active && b.journalSheetId &&
@@ -2183,25 +2251,24 @@ function renderOverview(panel) {
            !b.journalSheetId.startsWith("YOUR_");
   });
   const allJRows = linkedBranchKeys.flatMap(k => (allBranchJournals[k]?.rows || []));
-  // Fall back to current journalData if allBranchJournals not yet populated
   const currentJRows = journalData?.rows || [];
   const allFinRows = allJRows.length > 0 ? allJRows : currentJRows;
   const cashIn  = allFinRows.reduce((s,r) => s + parseFloat(r[5]||0), 0);
   const cashOut = allFinRows.reduce((s,r) => s + parseFloat(r[6]||0), 0);
-  // Net balance: sum last running balance from each LINKED branch only
   const netBalance = linkedBranchKeys.reduce((total, k) => {
     const rows = (allBranchJournals[k]?.rows || []).filter(r => r[7] && parseFloat(r[7]) !== 0);
     const last = rows.slice(-1)[0];
     return total + (last ? parseFloat(last[7]) : 0);
   }, 0);
 
- const EXAM_GRADE_COLS = [8,9,10,11,12,13,14,15,16,17,18];
-  const schools  = examR.length;
-  const cands    = examR.reduce((s,r) => s + EXAM_GRADE_COLS.reduce((a,i) => a+(parseInt(r[i])||0), 0), 0);
-  const salesTot = examR.reduce((s,r) => s + parseFloat((r[21]||"0").toString().replace(/[^0-9.]/g,"")), 0);
+ // Schools Registered + Total Bill — from pre-computed cache (instant)
+  const schools  = _cachedTotalSchools || examR.length;
+  const salesTot = _cachedTotalBill || examR.reduce((s,r) => s + parseFloat((r[21]||"0").toString().replace(/[^0-9.]/g,"")), 0);
+
+  const EXAM_GRADE_COLS = [8,9,10,11,12,13,14,15,16,17,18];
+  const cands = examR.reduce((s,r) => s + EXAM_GRADE_COLS.reduce((a,i) => a+(parseInt(r[i])||0), 0), 0);
   const prodUnits= prodR.reduce((s,r) => s+parseInt(r[3]||0),0);
   const debtTot  = debR.reduce((s,r) => s+parseFloat(r[7]||0),0);
-  const pending  = examR.filter(r=>r[8]==="Pending").length;
   const commissions = salR.reduce((s,r) => s+parseFloat(r[8]||0),0);
 
   const finKPIs = perm.seesFinance ? `
@@ -3503,79 +3570,1212 @@ function filterExams() {
 /* ══════════════════════════════════════════
    SALES
 ══════════════════════════════════════════ */
-function renderSales(panel) {
-  const d = liveData.sales; if (!d) { panel.innerHTML = loading(); return; }
-  const reps  = [...new Set(d.rows.map(r=>r[2]))].filter(Boolean);
-  const exams = [...new Set(d.rows.map(r=>r[1]))].filter(Boolean);
-  const totalRev  = d.rows.reduce((s,r)=>s+parseFloat(r[7]||0),0);
-  const totalComm = d.rows.reduce((s,r)=>s+parseFloat(r[8]||0),0);
-  const totalQty  = d.rows.reduce((s,r)=>s+parseInt(r[5]||0),0);
+/* ══════════════════════════════════════════
+   SALES MODULE — STATE
+══════════════════════════════════════════ */
+let salesView        = "general";
+let salesRep         = "";
+let salesDistrict    = "";
+let salesDataCache   = {};
+let salesRepCache    = {};
+let _cachedTotalSchools = 0;
+let _cachedTotalBill    = 0;
+const SALES_GRADE_LABELS = ["NS","KG1","KG2","BS1","BS2","BS3","BS4","BS5","BS6","BS7","BS8","BS9"];
+// Column indices in branch summary sheet (0-based): col 1=SN, 2=name, 4=schools, 5=NS, 6=KG1...16=BS9, 18=optionA, 19=total
+// Column indices in rep school sheet (0-based): 1=SN, 2=school, 3=location, 4=contact, 5=NS, 6=KG1..16=BS9, 17=OPT, 18=LANG, 19=FRE, 21=BILL
 
-  panel.innerHTML = `
-    <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
-      <div class="kpi-card green"><div class="kpi-glow"></div><div class="kpi-label">Total Revenue</div><div class="kpi-value">${ghs(totalRev)}</div><div class="kpi-icon">💰</div></div>
-      <div class="kpi-card amber"><div class="kpi-glow"></div><div class="kpi-label">Total Commissions</div><div class="kpi-value">${ghs(totalComm)}</div><div class="kpi-sub">${totalRev>0?((totalComm/totalRev)*100).toFixed(1):0}% of revenue</div><div class="kpi-icon">💼</div></div>
-      <div class="kpi-card blue"><div class="kpi-glow"></div><div class="kpi-label">Total Units Sold</div><div class="kpi-value">${totalQty.toLocaleString()}</div><div class="kpi-icon">📦</div></div>
+/* ── Proxy fetch helper ── */
+async function fetchSalesProxy(sheetName) {
+  const proxyUrl = CONFIG.SALES_PROXY;
+  if (!proxyUrl || proxyUrl.includes("YOUR_") || proxyUrl.trim() === "") return null;
+  try {
+    const res  = await fetch(proxyUrl + "?sheet=" + encodeURIComponent(sheetName));
+    const json = await res.json();
+    if (json.error || !json.rows) return null;
+    // Clean phone numbers
+    return { headers: json.headers || [], rows: json.rows || [] };
+  } catch(e) {
+    console.error("Sales proxy error:", sheetName, e);
+    return null;
+  }
+}
+
+/* ── Parse branch summary sheet (G-GHAANA / U-GHANA / C-GHANA) ── */
+function parseBranchSummary(raw) {
+  if (!raw || !raw.rows || !raw.rows.length) return null;
+  const rows = raw.rows;
+
+  // KPI rows — the proxy returns all rows; we look for the summary text in col[1]
+  let individSchools = 0, distSchools = 0, totalSchools = 0, optionATotal = 0;
+  let repRows = [];
+  let inRepSection = false;
+
+  rows.forEach(r => {
+    const c1 = (r[1]||"").toString().trim().toUpperCase();
+    const c3 = (r[3]||"").toString().trim().toUpperCase();
+
+    // KPI rows (proxy returns them as the row data)
+    if (c1.includes("TOTAL") && c3.includes("INDIVIDUAL")) {
+      individSchools = parseInt((r[20]||r[21]||0).toString().replace(/[^0-9]/g,"")) || 0;
+    }
+    if (c1.includes("TOTAL") && c3.includes("DISTRICTS")) {
+      distSchools = parseInt((r[20]||r[21]||0).toString().replace(/[^0-9]/g,"")) || 0;
+    }
+    if (c1.includes("GRAND TOTAL")) {
+      totalSchools = parseInt((r[20]||r[21]||0).toString().replace(/[^0-9]/g,"")) || 0;
+    }
+    // Option A: check col 19 in a summary row — pick from individual row
+    if (c1.includes("TOTAL") && c3.includes("INDIVIDUAL") && r[19] !== undefined) {
+      optionATotal = parseInt((r[19]||0).toString().replace(/[^0-9]/g,"")) || 0;
+    }
+
+    // Rep data rows: col[1] is a number (S/N), col[2] is a name
+    const sn = parseInt(r[1]);
+    const name = (r[2]||"").toString().trim();
+    if (!isNaN(sn) && sn > 0 && name && name !== "S/N" && name !== "NAME OF MARKETER") {
+      const schools = parseInt((r[4]||0).toString().replace(/[^0-9]/g,"")) || 0;
+      const grades  = [5,6,7,8,9,10,11,12,13,14,15,16].map(ci => parseInt((r[ci]||0).toString().replace(/[^0-9]/g,""))||0);
+      const optA    = parseInt((r[18]||0).toString().replace(/[^0-9]/g,"")) || 0;
+      const total   = grades.reduce((s,v) => s+v, 0);
+      repRows.push({ sn, name, schools, grades, optionA: optA, total });
+    }
+  });
+
+  // Fallback: compute totals from rep rows if KPIs missing
+  if (!totalSchools && repRows.length) {
+    totalSchools = repRows.reduce((s,r) => s + r.schools, 0);
+    individSchools = totalSchools;
+  }
+  if (!optionATotal) {
+    optionATotal = repRows.reduce((s,r) => s + r.optionA, 0);
+  }
+
+  return { individSchools, distSchools, totalSchools, optionATotal, repRows };
+}
+
+/* ── Parse STATISTICS sheet (general view) ── */
+function parseStatistics(raw) {
+  if (!raw || !raw.rows || !raw.rows.length) return null;
+  const rows = raw.rows;
+
+  let individSchools = 0, distSchools = 0, totalSchools = 0, optionATotal = 0;
+  let repRows = [], distRows = [], inDistSection = false;
+
+  rows.forEach(r => {
+    const c1 = (r[1]||"").toString().trim().toUpperCase();
+    const c3 = (r[3]||"").toString().trim().toUpperCase();
+
+    if (c1.includes("TOTAL") && c3.includes("INDIVIDUAL")) {
+      individSchools = parseInt((r[20]||r[21]||0).toString().replace(/[^0-9]/g,"")) || 0;
+      optionATotal   = parseInt((r[19]||0).toString().replace(/[^0-9]/g,"")) || 0;
+    }
+    if (c1.includes("TOTAL") && c3.includes("DISTRICTS")) {
+      distSchools = parseInt((r[20]||r[21]||0).toString().replace(/[^0-9]/g,"")) || 0;
+    }
+    if (c1.includes("GRAND TOTAL")) {
+      totalSchools = parseInt((r[20]||r[21]||0).toString().replace(/[^0-9]/g,"")) || 0;
+    }
+
+    // District section marker
+    if (c1 === "DISTRICTS" && !r[2]) { inDistSection = true; return; }
+
+    const sn = parseInt(r[1]);
+    const name = (r[2]||"").toString().trim();
+    if (!isNaN(sn) && sn > 0 && name && name !== "S/N" && name !== "NAME OF MARKETER") {
+      const schools = parseInt((r[4]||0).toString().replace(/[^0-9]/g,"")) || 0;
+      const grades  = [5,6,7,8,9,10,11,12,13,14,15,16].map(ci => parseInt((r[ci]||0).toString().replace(/[^0-9]/g,""))||0);
+      const optA    = parseInt((r[18]||0).toString().replace(/[^0-9]/g,"")) || 0;
+      const total   = grades.reduce((s,v) => s+v, 0);
+      if (inDistSection) {
+        distRows.push({ sn, name, schools, grades, optionA: optA, total });
+      } else {
+        repRows.push({ sn, name, schools, grades, optionA: optA, total });
+      }
+    }
+  });
+
+  if (!totalSchools && repRows.length) {
+    totalSchools   = repRows.reduce((s,r) => s + r.schools, 0);
+    individSchools = totalSchools;
+  }
+  if (!optionATotal) optionATotal = repRows.reduce((s,r) => s + r.optionA, 0);
+
+  return { individSchools, distSchools, totalSchools, optionATotal, repRows, distRows };
+}
+
+/* ── Parse individual rep sheet (schools data) ── */
+function parseRepSheet(raw) {
+  if (!raw || !raw.rows || !raw.rows.length) return null;
+  const rows = raw.rows;
+
+  // Find header row (contains "NAME OF SCHOOL")
+  let headerIdx = -1;
+  rows.forEach((r, i) => {
+    if ((r[2]||"").toString().toUpperCase().includes("NAME OF SCHOOL")) headerIdx = i;
+  });
+  if (headerIdx < 0) headerIdx = 3; // default row 4 (0-indexed 3)
+
+  const dataRows = rows.slice(headerIdx + 1).filter(r => {
+    const sn = parseInt(r[1]);
+    const name = (r[2]||"").toString().trim();
+    return !isNaN(sn) && sn > 0 && name && !name.toUpperCase().includes("TOTAL");
+  });
+
+  return dataRows.map(r => {
+    const grades = [5,6,7,8,9,10,11,12,13,14,15,16].map(ci =>
+      parseInt((r[ci]||0).toString().replace(/[^0-9]/g,"")) || 0
+    );
+    const bill = parseInt((r[21]||0).toString().replace(/[^0-9]/g,"")) || 0;
+    let phone = (r[4]||"").toString().replace(/\.0$/,"");
+    if (/^\d{9}$/.test(phone)) phone = "0" + phone;
+    return {
+      sn:       parseInt(r[1]),
+      school:   (r[2]||"").toString().trim(),
+      location: (r[3]||"").toString().trim(),
+      contact:  phone,
+      grades,
+      optionA:  (r[17]||"").toString().trim(),
+      lang:     (r[18]||"").toString().trim(),
+      french:   (r[19]||"").toString().trim(),
+      bill,
+      total:    grades.reduce((s,v) => s+v, 0)
+    };
+  });
+}
+
+/* ══════════════════════════════════════════
+   SALES — MAIN RENDER
+══════════════════════════════════════════ */
+async function renderSales(panel) {
+  if (document.getElementById("sales-kpi-top")) {
+    await loadSalesData();
+    renderSalesContent();
+    const allLoaded = Object.values(CONFIG.SALES_BRANCHES).every(bCfg =>
+      bCfg.reps.filter(r => r.sheet).every(r => salesRepCache[r.sheet])
+    );
+    if (!allLoaded) loadAllRepSheetsInBackground();
+    return;
+  }
+  panel.innerHTML = buildSalesShell();
+  await loadSalesData();
+  renderSalesContent();
+  loadAllRepSheetsInBackground();
+}
+
+function buildSalesShell() {
+  const branchKeys = Object.keys(CONFIG.SALES_BRANCHES);
+  return `
+    <!-- Branch / View switcher bar -->
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:22px">
+      <!-- General view button -->
+      <button id="sales-view-general" onclick="switchSalesView('general')"
+        style="padding:9px 20px;border-radius:var(--r-md);font-size:13px;font-weight:700;
+          border:1px solid var(--border);cursor:pointer;transition:all .2s;font-family:var(--font-display);
+          background:${salesView==='general'?'linear-gradient(135deg,#3d9cf5,#6366f1)':'var(--bg2)'};
+          color:${salesView==='general'?'#fff':'var(--text2)'};
+          box-shadow:${salesView==='general'?'0 4px 16px rgba(61,156,245,.28)':'none'}">
+        General Overview
+      </button>
+      <!-- Branch buttons -->
+      ${branchKeys.map(bk => {
+        const b = CONFIG.SALES_BRANCHES[bk];
+        const active = salesView === bk;
+        return `<button id="sales-view-${bk.replace(/[^a-z0-9]/gi,'-')}" onclick="switchSalesView('${bk}')"
+          style="padding:9px 20px;border-radius:var(--r-md);font-size:13px;font-weight:700;
+            border:1px solid ${active?b.color+'66':'var(--border)'};cursor:pointer;transition:all .2s;
+            font-family:var(--font-display);
+            background:${active?b.color+'22':'var(--bg2)'};
+            color:${active?b.color:'var(--text2)'};
+            display:flex;align-items:center;gap:7px">
+          <span style="width:8px;height:8px;border-radius:50%;background:${b.color};flex-shrink:0"></span>
+          ${b.label}
+        </button>`;
+      }).join("")}
+     <div style="margin-left:auto" id="sales-last-update"></div>
     </div>
-    <div class="charts-row" style="margin-bottom:24px">
-      <div class="chart-card"><h4>Revenue by Rep</h4><canvas id="chart-sales-rev" height="185"></canvas></div>
-      <div class="chart-card"><h4>Commission Breakdown</h4><canvas id="chart-sales-comm" height="185"></canvas></div>
-    </div>
-    <div class="sh">
-      <div class="sh-left"><div class="sh-title">Sales Records</div><span class="sh-count" id="sales-count">${d.rows.length} records</span></div>
+
+    <!-- KPI row 1 (4 cards) -->
+    <div id="sales-kpi-top" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px"></div>
+    <!-- KPI row 2 (4 cards) -->
+    <div id="sales-kpi-bottom" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px"></div>
+
+    <!-- Charts row -->
+    <div id="sales-charts-row" style="margin-bottom:24px"></div>
+
+    <!-- Filter + table section -->
+    <div id="sales-table-section"></div>`;
+}
+
+async function loadSalesData() {
+  const toLoad = [];
+  if (!salesDataCache["STATISTICS"]) toLoad.push("STATISTICS");
+  if (salesView !== "general") {
+    const bCfg = CONFIG.SALES_BRANCHES[salesView];
+    if (bCfg && !salesDataCache[bCfg.sheetName]) toLoad.push(bCfg.sheetName);
+  }
+  // Only fetch if something is actually missing
+  if (toLoad.length === 0) return;
+  await Promise.all(toLoad.map(async key => {
+    const raw = await fetchSalesProxy(key);
+    if (raw) salesDataCache[key] = raw;
+  }));
+}
+
+
+function renderSalesContent() {
+  if (salesView === "general") {
+    renderSalesGeneral();
+  } else {
+    renderSalesBranch();
+  }
+}
+
+async function switchSalesView(view) {
+  if (salesView === view) return;
+  salesView     = view;
+  salesRep      = "";
+  salesDistrict = "";
+  const panel = document.getElementById("panel-sales");
+  if (!panel) return;
+
+  // Update button styles
+  Object.keys(CONFIG.SALES_BRANCHES).forEach(bk => {
+    const b   = CONFIG.SALES_BRANCHES[bk];
+    const btn = document.getElementById("sales-view-" + bk.replace(/[^a-z0-9]/gi, "-"));
+    if (!btn) return;
+    const active = salesView === bk;
+    btn.style.background  = active ? b.color + "22" : "var(--bg2)";
+    btn.style.color       = active ? b.color : "var(--text2)";
+    btn.style.borderColor = active ? b.color + "66" : "var(--border)";
+  });
+  const genBtn = document.getElementById("sales-view-general");
+  if (genBtn) {
+    const active = salesView === "general";
+    genBtn.style.background = active ? "linear-gradient(135deg,#3d9cf5,#6366f1)" : "var(--bg2)";
+    genBtn.style.color      = active ? "#fff" : "var(--text2)";
+    genBtn.style.boxShadow  = active ? "0 4px 16px rgba(61,156,245,.28)" : "none";
+  }
+
+  // Always render instantly from cache — never show spinner
+  renderSalesContent();
+
+  // Fetch missing data silently in background — no UI block
+  const needsData = salesView === "general"
+    ? !salesDataCache["STATISTICS"]
+    : !salesDataCache[CONFIG.SALES_BRANCHES[salesView]?.sheetName];
+
+  if (needsData) {
+    loadSalesData().then(() => {
+      const topDiv = document.getElementById("sales-kpi-top");
+      if (topDiv) renderSalesContent(); // silent refresh once data arrives
+    });
+  }
+
+  // Load rep sheets in background if not fully cached
+  const allLoaded = Object.values(CONFIG.SALES_BRANCHES).every(bCfg =>
+    bCfg.reps.filter(r => r.sheet).every(r => salesRepCache[r.sheet])
+  );
+  if (!allLoaded) loadAllRepSheetsInBackground();
+}
+/* ══════════════════════════════════════════
+   SALES — GENERAL VIEW (STATISTICS sheet)
+══════════════════════════════════════════ */
+function renderSalesGeneral() {
+  // Always force reading from STATISTICS for general view
+  const raw  = salesDataCache["STATISTICS"];
+  const data = raw ? parseStatistics(raw) : null;
+
+  // Clear any branch-specific chart/table leftovers before rendering
+  const chartsRow = document.getElementById("sales-charts-row");
+  if (chartsRow) { destroyChart("chart-sales-br-enrol"); destroyChart("chart-sales-br-schools"); }
+
+  renderSalesKPIs(data);
+
+
+  // Charts
+  if (chartsRow && data) {
+    chartsRow.innerHTML = `
+      <div class="charts-row">
+        <div class="chart-card tall"><h4>Enrolment by Marketer</h4><canvas id="chart-sales-gen-reps" height="200"></canvas></div>
+        <div class="chart-card tall"><h4>Schools by Marketer</h4><canvas id="chart-sales-gen-schools" height="200"></canvas></div>
+      </div>`;
+    setTimeout(() => {
+      const topReps = (data.repRows||[]).slice(0,15);
+      const CHART_COLS = ["#3d9cf5","#a78bfa","#2dd4bf","#ffb830","#ff4d6d","#00e5a0","#fb923c","#6366f1","#f472b6","#34d399","#f59e0b","#60a5fa","#c084fc","#4ade80","#f87171"];
+      mkChart("chart-sales-gen-reps", {
+        type:"bar",
+        data:{ labels: topReps.map(r=>r.name), datasets:[{
+          label:"Total Enrolment", data: topReps.map(r=>r.total),
+          backgroundColor: CHART_COLS.slice(0,topReps.length), borderRadius:5, borderWidth:0
+        }]},
+        options:{ responsive:true, plugins:{legend:{display:false}},
+          scales:{x:{ticks:{color:lc(),font:{size:9},maxRotation:45},grid:{color:gc()}},
+                  y:{ticks:{color:lc(),font:{size:10}},grid:{color:gc()}}} }
+      });
+      mkChart("chart-sales-gen-schools", {
+        type:"bar",
+        data:{ labels: topReps.map(r=>r.name), datasets:[{
+          label:"# Schools", data: topReps.map(r=>r.schools),
+          backgroundColor: CHART_COLS.map(c=>c+"99"), borderRadius:5, borderWidth:0
+        }]},
+        options:{ responsive:true, plugins:{legend:{display:false}},
+          scales:{x:{ticks:{color:lc(),font:{size:9},maxRotation:45},grid:{color:gc()}},
+                  y:{ticks:{color:lc(),font:{size:10}},grid:{color:gc()}}} }
+      });
+    }, 80);
+  } else if (chartsRow) {
+    chartsRow.innerHTML = "";
+  }
+
+  // Table section — reps table + district filter/table
+  const tableSection = document.getElementById("sales-table-section");
+  if (!tableSection) return;
+
+  const repRows    = data?.repRows || [];
+  const distRows   = data?.distRows || [];
+  const districts  = distRows.map(d => d.name);
+
+  tableSection.innerHTML = `
+    <!-- Reps summary table -->
+    <div class="sh" style="margin-bottom:12px">
+      <div class="sh-left">
+        <div class="sh-title">All Marketers — Statistics</div>
+        <span class="sh-count" id="sales-rep-count">${repRows.length} marketers</span>
+      </div>
       <div class="sh-right">
-        <select class="filter-select" id="sales-rep" onchange="filterSales()">
-          <option value="">All Reps</option>${reps.map(r=>`<option value="${r}">${r}</option>`).join("")}
+        <select class="filter-select" id="sales-gen-district" onchange="filterSalesGenDistrict(this.value)">
+          <option value="">All Reps</option>
+          ${districts.length ? `<optgroup label="── Districts ──">
+            ${districts.map(d=>`<option value="${d}">${d}</option>`).join("")}
+          </optgroup>` : ""}
         </select>
-        <select class="filter-select" id="sales-exam" onchange="filterSales()">
-          <option value="">All Exams</option>${exams.map(e=>`<option value="${e}">${e}</option>`).join("")}
-        </select>
-        <div class="search-wrap"><span class="s-icon">⌕</span><input class="search-input" id="search-sales" placeholder="Search…" oninput="filterSales()"></div>
+        <div class="search-wrap"><span class="s-icon">⌕</span>
+          <input class="search-input" id="sales-gen-search" placeholder="Search marketer…" oninput="filterSalesGenSearch()" style="width:180px">
+        </div>
       </div>
     </div>
-    <div id="sales-table-wrap"></div>`;
-  renderSalesRows();
-  setTimeout(() => {
-    const repSet = [...new Set(d.rows.map(r=>r[2]))];
-    const revByRep  = repSet.map(rep => d.rows.filter(r=>r[2]===rep).reduce((s,r)=>s+parseFloat(r[7]||0),0));
-    const commByRep = repSet.map(rep => d.rows.filter(r=>r[2]===rep).reduce((s,r)=>s+parseFloat(r[8]||0),0));
-    mkChart("chart-sales-rev", {
-      type:"bar",
-      data:{ labels:repSet, datasets:[
-        { label:"Revenue", data:revByRep, backgroundColor:"rgba(0,229,160,.75)", borderRadius:6 }
-      ]},
-      options:{ responsive:true, plugins:{legend:{display:false}},
-        scales:{x:{ticks:{color:lc()},grid:{color:gc()}},y:{ticks:{color:lc(),font:{size:10}},grid:{color:gc()}}} }
-    });
-    mkChart("chart-sales-comm", {
-      type:"bar",
-      data:{ labels:repSet, datasets:[
-        { label:"Commission", data:commByRep, backgroundColor:"rgba(255,184,48,.75)", borderRadius:6 }
-      ]},
-      options:{ responsive:true, plugins:{legend:{display:false}},
-        scales:{x:{ticks:{color:lc()},grid:{color:gc()}},y:{ticks:{color:lc(),font:{size:10}},grid:{color:gc()}}} }
-    });
-  }, 80);
+    <div id="sales-gen-table-wrap"></div>
+
+    <!-- District section -->
+    ${distRows.length ? `
+    <div class="sh" style="margin-top:24px;margin-bottom:12px">
+      <div class="sh-left">
+        <div class="sh-title">District Schools</div>
+        <span class="sh-count">${distRows.length} districts</span>
+      </div>
+    </div>
+    <div id="sales-dist-table-wrap"></div>` : ""}`;
+
+  renderSalesGenRepTable(repRows);
+  if (distRows.length) renderSalesDistTable(distRows);
 }
 
+function renderSalesGenRepTable(rows) {
+  const wrap = document.getElementById("sales-gen-table-wrap");
+  if (!wrap) return;
 
-function renderSalesRows() {
-  const d = liveData.sales; if (!d) return;
-  const rep  = document.getElementById("sales-rep")?.value||"";
-  const exam = document.getElementById("sales-exam")?.value||"";
-  const q    = document.getElementById("search-sales")?.value.toLowerCase()||"";
-  const fn = r => {
-    if (rep  && r[2]!==rep)  return false;
-    if (exam && r[1]!==exam) return false;
-    if (q && !r.join(" ").toLowerCase().includes(q)) return false;
-    return true;
-  };
-  const wrap = document.getElementById("sales-table-wrap");
-  if (wrap) wrap.innerHTML = buildTable(d, fn, { canEdit:p().canEdit, canDelete:p().canDelete, dataKey:"sales" });
-  const cnt = document.getElementById("sales-count");
-  if (cnt) cnt.textContent = d.rows.filter(fn).length + " records";
+  const q = (document.getElementById("sales-gen-search")?.value || "").toLowerCase();
+  const distFilter = document.getElementById("sales-gen-district")?.value || "";
+
+  // If district filter is active, show district table instead
+  if (distFilter) {
+    const raw  = salesDataCache["STATISTICS"];
+    const data = raw ? parseStatistics(raw) : null;
+    const dRow = data?.distRows.filter(d => d.name === distFilter) || [];
+    wrap.innerHTML = "";
+    const distWrap = document.getElementById("sales-dist-table-wrap");
+    if (distWrap) renderSalesDistTable(dRow);
+    return;
+  }
+
+  const filtered = q ? rows.filter(r => r.name.toLowerCase().includes(q)) : rows;
+  const cnt = document.getElementById("sales-rep-count");
+  if (cnt) cnt.textContent = filtered.length + " marketers";
+
+  if (!filtered.length) {
+    wrap.innerHTML = `<div class="table-wrap"><table>
+      <thead><tr><th>#</th><th>MARKETER</th><th>SCHOOLS</th>
+        ${SALES_GRADE_LABELS.map(l=>`<th style="text-align:center">${l}</th>`).join("")}
+        <th style="text-align:right">TOTAL</th><th style="text-align:center">OPT A</th>
+      </tr></thead>
+      <tbody><tr class="empty-row"><td colspan="${4+SALES_GRADE_LABELS.length}">No data found.</td></tr></tbody>
+    </table></div>`;
+    return;
+  }
+
+  // Compute grade totals
+  const gradeTotals = SALES_GRADE_LABELS.map((_,gi) => filtered.reduce((s,r) => s + (r.grades[gi]||0), 0));
+  const grandTotal  = filtered.reduce((s,r) => s + r.total, 0);
+  const totalSchools= filtered.reduce((s,r) => s + r.schools, 0);
+  const totalOptA   = filtered.reduce((s,r) => s + r.optionA, 0);
+
+  wrap.innerHTML = `<div class="table-wrap scroll" style="border-radius:var(--r-lg) var(--r-lg) 0 0">
+    <table style="min-width:900px">
+      <thead><tr>
+        <th style="min-width:30px">#</th>
+        <th style="min-width:130px">MARKETER</th>
+        <th style="text-align:center;min-width:55px">SCHOOLS</th>
+        ${SALES_GRADE_LABELS.map(l=>`<th style="text-align:center;min-width:44px">${l}</th>`).join("")}
+        <th style="text-align:right;min-width:75px">TOTAL</th>
+        <th style="text-align:center;min-width:55px">OPT A</th>
+      </tr></thead>
+      <tbody>
+        ${filtered.map((r,i) => `<tr style="transition:background .12s" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background=''">
+          <td style="color:var(--text3);font-family:var(--font-mono);font-size:11px">${r.sn}</td>
+          <td style="font-weight:600;font-size:13px">${r.name}</td>
+          <td style="text-align:center;font-family:var(--font-mono);font-weight:700;color:var(--blue)">${r.schools||"—"}</td>
+          ${r.grades.map((v,gi) => `<td style="text-align:center;font-family:var(--font-mono);font-size:12px;color:${v>0?'var(--text)':'var(--text3)'}">${v>0?v.toLocaleString():"—"}</td>`).join("")}
+          <td style="text-align:right;font-family:var(--font-mono);font-weight:700;color:var(--green)">${r.total.toLocaleString()}</td>
+          <td style="text-align:center;font-family:var(--font-mono);font-size:12px;color:${r.optionA>0?'var(--amber)':'var(--text3)'}">${r.optionA>0?r.optionA:"—"}</td>
+        </tr>`).join("")}
+      </tbody>
+      <tfoot>
+        <tr style="background:var(--bg2);border-top:2px solid var(--border2)">
+          <td></td>
+          <td style="font-family:var(--font-display);font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em">TOTALS</td>
+          <td style="text-align:center;font-family:var(--font-mono);font-weight:800;color:var(--blue)">${totalSchools.toLocaleString()}</td>
+          ${gradeTotals.map(v=>`<td style="text-align:center;font-family:var(--font-mono);font-weight:700;color:var(--blue);font-size:12px">${v.toLocaleString()}</td>`).join("")}
+          <td style="text-align:right;font-family:var(--font-mono);font-weight:800;color:var(--green)">${grandTotal.toLocaleString()}</td>
+          <td style="text-align:center;font-family:var(--font-mono);font-weight:700;color:var(--amber)">${totalOptA.toLocaleString()}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>`;
 }
-function filterSales() { renderSalesRows(); }
+
+function renderSalesDistTable(rows) {
+  const wrap = document.getElementById("sales-dist-table-wrap");
+  if (!wrap) return;
+
+  if (!rows.length) {
+    wrap.innerHTML = `<div class="table-wrap"><table>
+      <tbody><tr class="empty-row"><td colspan="${4+SALES_GRADE_LABELS.length}">No district data.</td></tr></tbody>
+    </table></div>`;
+    return;
+  }
+
+  const gradeTotals = SALES_GRADE_LABELS.map((_,gi) => rows.reduce((s,r) => s+(r.grades[gi]||0),0));
+  const grandTotal  = rows.reduce((s,r) => s+r.total, 0);
+  const totalSchools= rows.reduce((s,r) => s+r.schools, 0);
+
+  wrap.innerHTML = `<div class="table-wrap scroll" style="border-radius:var(--r-lg)">
+    <table style="min-width:900px">
+      <thead><tr>
+        <th>#</th><th>DISTRICT</th>
+        <th style="text-align:center">SCHOOLS</th>
+        ${SALES_GRADE_LABELS.map(l=>`<th style="text-align:center;min-width:44px">${l}</th>`).join("")}
+        <th style="text-align:right">TOTAL</th>
+      </tr></thead>
+      <tbody>
+        ${rows.map(r => `<tr style="transition:background .12s" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background=''">
+          <td style="color:var(--text3);font-family:var(--font-mono);font-size:11px">${r.sn}</td>
+          <td style="font-weight:600;font-size:13px;color:var(--amber)">${r.name}</td>
+          <td style="text-align:center;font-family:var(--font-mono);font-weight:700;color:var(--blue)">${r.schools||"—"}</td>
+          ${r.grades.map(v=>`<td style="text-align:center;font-family:var(--font-mono);font-size:12px;color:${v>0?'var(--text)':'var(--text3)'}">${v>0?v.toLocaleString():"—"}</td>`).join("")}
+          <td style="text-align:right;font-family:var(--font-mono);font-weight:700;color:var(--green)">${r.total.toLocaleString()}</td>
+        </tr>`).join("")}
+      </tbody>
+      <tfoot>
+        <tr style="background:var(--bg2);border-top:2px solid var(--border2)">
+          <td></td>
+          <td style="font-family:var(--font-display);font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em">TOTALS</td>
+          <td style="text-align:center;font-family:var(--font-mono);font-weight:800;color:var(--blue)">${totalSchools.toLocaleString()}</td>
+          ${gradeTotals.map(v=>`<td style="text-align:center;font-family:var(--font-mono);font-weight:700;color:var(--blue);font-size:12px">${v.toLocaleString()}</td>`).join("")}
+          <td style="text-align:right;font-family:var(--font-mono);font-weight:800;color:var(--green)">${grandTotal.toLocaleString()}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>`;
+}
+
+function filterSalesGenDistrict(val) {
+  salesDistrict = val;
+  const raw  = salesDataCache["STATISTICS"];
+  const data = raw ? parseStatistics(raw) : null;
+  if (!data) return;
+
+  if (val) {
+    // Show selected district in district table, hide rep table body
+    const wrap = document.getElementById("sales-gen-table-wrap");
+    if (wrap) wrap.innerHTML = "";
+    const distWrap = document.getElementById("sales-dist-table-wrap");
+    if (distWrap) {
+      const dRows = data.distRows.filter(d => d.name === val);
+      renderSalesDistTable(dRows);
+    }
+  } else {
+    renderSalesGenRepTable(data.repRows);
+    if (data.distRows.length) {
+      const distWrap = document.getElementById("sales-dist-table-wrap");
+      if (distWrap) renderSalesDistTable(data.distRows);
+    }
+  }
+}
+
+function filterSalesGenSearch() {
+  const raw  = salesDataCache["STATISTICS"];
+  const data = raw ? parseStatistics(raw) : null;
+  if (!data) return;
+  // Only update the table, preserve everything else
+  renderSalesGenRepTable(data.repRows);
+}
+
+function filterSalesBranchSearch() {
+  const bCfg = CONFIG.SALES_BRANCHES[salesView];
+  const raw  = salesDataCache[bCfg?.sheetName];
+  const data = raw ? parseBranchSummary(raw) : null;
+  if (!data) return;
+  // Only update the table wrap, don't touch KPIs or charts
+  const repRows = data.repRows;
+  const q = (document.getElementById("sales-branch-search")?.value || "").toLowerCase();
+  const filtered = q ? repRows.filter(r => r.name.toLowerCase().includes(q)) : repRows;
+  const cnt = document.getElementById("sales-branch-count");
+  if (cnt) cnt.textContent = filtered.length + " reps";
+  // Re-render table only
+  const wrap = document.getElementById("sales-branch-table-wrap");
+  if (wrap && !salesRep) renderSalesBranchTable(repRows, data);
+}
+/* ══════════════════════════════════════════
+   SALES — BRANCH VIEW
+══════════════════════════════════════════ */
+function renderSalesBranch() {
+  const bCfg = CONFIG.SALES_BRANCHES[salesView];
+  if (!bCfg) return;
+
+  const raw  = salesDataCache[bCfg.sheetName];
+  const data = raw ? parseBranchSummary(raw) : null;
+
+  renderSalesKPIs(data);
+
+  // Charts
+  const chartsRow = document.getElementById("sales-charts-row");
+  if (chartsRow && data) {
+    chartsRow.innerHTML = `
+      <div class="charts-row">
+        <div class="chart-card tall"><h4>${bCfg.label} — Enrolment by Rep</h4><canvas id="chart-sales-br-enrol" height="200"></canvas></div>
+        <div class="chart-card tall"><h4>${bCfg.label} — Schools by Rep</h4><canvas id="chart-sales-br-schools" height="200"></canvas></div>
+      </div>`;
+    setTimeout(() => {
+      const CHART_COLS = ["#3d9cf5","#a78bfa","#2dd4bf","#ffb830","#ff4d6d","#00e5a0","#fb923c","#6366f1","#f472b6","#34d399","#f59e0b","#60a5fa","#c084fc","#4ade80","#f87171"];
+      const repRows = data.repRows;
+      mkChart("chart-sales-br-enrol", {
+        type:"bar",
+        data:{ labels: repRows.map(r=>r.name), datasets:[{
+          label:"Total Enrolment", data: repRows.map(r=>r.total),
+          backgroundColor: bCfg.color, borderRadius:5, borderWidth:0
+        }]},
+        options:{ responsive:true, plugins:{legend:{display:false}},
+          scales:{x:{ticks:{color:lc(),font:{size:9},maxRotation:45},grid:{color:gc()}},
+                  y:{ticks:{color:lc()},grid:{color:gc()}}} }
+      });
+      mkChart("chart-sales-br-schools", {
+        type:"bar",
+        data:{ labels: repRows.map(r=>r.name), datasets:[{
+          label:"# Schools", data: repRows.map(r=>r.schools),
+          backgroundColor: bCfg.color + "88", borderRadius:5, borderWidth:0
+        }]},
+        options:{ responsive:true, plugins:{legend:{display:false}},
+          scales:{x:{ticks:{color:lc(),font:{size:9},maxRotation:45},grid:{color:gc()}},
+                  y:{ticks:{color:lc()},grid:{color:gc()}}} }
+      });
+    }, 80);
+  } else if (chartsRow) {
+    chartsRow.innerHTML = "";
+  }
+
+  // Table section
+  const tableSection = document.getElementById("sales-table-section");
+  if (!tableSection) return;
+
+  const repRows = data?.repRows || [];
+  const reps    = bCfg.reps.map(r => r.name);
+
+  tableSection.innerHTML = `
+    <div class="sh" style="margin-bottom:12px">
+      <div class="sh-left">
+        <div class="sh-title">${bCfg.label} — Marketer Enrolment</div>
+        <span class="sh-count" id="sales-branch-count">${repRows.length} reps</span>
+      </div>
+      <div class="sh-right">
+        <select class="filter-select" id="sales-branch-rep" onchange="switchSalesRep(this.value)" style="min-width:160px">
+          <option value="">All Reps</option>
+          ${bCfg.reps.map(r=>`<option value="${r.name}" ${salesRep===r.name?"selected":""}>${r.name}</option>`).join("")}
+        </select>
+        <div class="search-wrap"><span class="s-icon">⌕</span>
+          <input class="search-input" id="sales-branch-search" placeholder="Search…" oninput="filterSalesBranchSearch()" style="width:180px">
+        </div>
+      </div>
+    </div>
+    <div id="sales-branch-table-wrap"></div>
+  <div id="sales-rep-detail-wrap" style="margin-top:24px"></div>`;
+
+renderSalesBranchTable(repRows, data);
+  // Background loading is now handled by loadAllRepSheetsInBackground()
+  // called from renderSales / switchSalesView — no duplicate call here
+}
+
+function buildSchoolTbody(schools, bCfg) {
+  if (!schools || !schools.length) {
+    return `<tr><td colspan="${4 + SALES_GRADE_LABELS.length + 2}"
+      style="text-align:center;padding:32px;color:var(--text2);font-size:13px">
+      No school data available — check proxy.
+    </td></tr>`;
+  }
+  const totalBill = schools.reduce((s, r) => s + r.bill, 0);
+  const gradeTots = SALES_GRADE_LABELS.map((_, gi) => schools.reduce((s, r) => s + (r.grades[gi] || 0), 0));
+  return schools.map(r => `<tr style="transition:background .12s"
+      onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background=''">
+    <td style="color:var(--text3);font-family:var(--font-mono);font-size:11px">${r.sn}</td>
+    <td style="font-weight:500;max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+      title="${r.school.replace(/"/g,'&quot;')}">${r.school}</td>
+    <td style="font-size:12px;color:var(--text2);white-space:nowrap">${r.location || "—"}</td>
+    <td style="font-family:var(--font-mono);font-size:11px;color:var(--text2);white-space:nowrap">${r.contact || "—"}</td>
+    ${r.grades.map(v => `<td style="text-align:center;font-family:var(--font-mono);font-size:12px;color:${v > 0 ? 'var(--text)' : 'var(--text3)'}">${v > 0 ? v : "—"}</td>`).join("")}
+    <td style="text-align:center;font-size:11px;color:var(--text2)">${r.lang || "—"}</td>
+    <td style="text-align:center">
+      <span class="${(r.french||"").toUpperCase()==='YES'?'badge badge-green':'badge badge-amber'}" style="font-size:10px">${r.french || "—"}</span>
+    </td>
+    <td style="text-align:right;font-family:var(--font-mono);font-weight:600;color:${r.bill > 0 ? 'var(--green)' : 'var(--text3)'}">
+      ${r.bill > 0 ? r.bill.toLocaleString() : "—"}
+    </td>
+  </tr>`).join("") + `
+  <tr style="background:var(--bg2);border-top:2px solid var(--border2)">
+    <td></td>
+    <td style="font-family:var(--font-display);font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em">TOTALS</td>
+    <td colspan="2"></td>
+    ${gradeTots.map(v => `<td style="text-align:center;font-family:var(--font-mono);font-weight:700;color:var(--blue);font-size:12px">${v > 0 ? v.toLocaleString() : ""}</td>`).join("")}
+    <td colspan="2"></td>
+    <td style="text-align:right;font-family:var(--font-mono);font-weight:800;color:var(--green)">${totalBill > 0 ? totalBill.toLocaleString() : "—"}</td>
+  </tr>`;
+}
+
+function renderSalesBranchTable(repRows, data) {
+  const wrap = document.getElementById("sales-branch-table-wrap");
+  if (!wrap) return;
+
+  const bCfg    = CONFIG.SALES_BRANCHES[salesView];
+  const q       = (document.getElementById("sales-branch-search")?.value || "").toLowerCase();
+  const filtered = q ? repRows.filter(r => r.name.toLowerCase().includes(q)) : repRows;
+  const cnt     = document.getElementById("sales-branch-count");
+
+  // ── Rep selected: show summary strip + school rows inline ──
+  if (salesRep) {
+    const selRow  = repRows.find(r => r.name === salesRep);
+    const repCfg  = bCfg?.reps.find(r => r.name === salesRep);
+    const hasSheet = !!repCfg?.sheet;
+    const cached   = hasSheet ? salesRepCache[repCfg.sheet] : null;
+    const schools  = cached ? parseRepSheet(cached) : null;
+    const col      = bCfg?.color || "#3d9cf5";
+
+    if (cnt) cnt.textContent = filtered.length + " reps";
+
+    const gradeTotals = SALES_GRADE_LABELS.map((_, gi) => selRow ? (selRow.grades[gi] || 0) : 0);
+    const cachedBill  = schools ? schools.reduce((s, r) => s + r.bill, 0) : 0;
+
+    const summaryStrip = `
+      <div style="background:${col}0e;border:1.5px solid ${col}44;border-radius:var(--r-lg);
+        padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <div style="width:38px;height:38px;border-radius:50%;background:${col}22;border:2px solid ${col}55;
+          display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:${col};flex-shrink:0">
+          ${salesRep.slice(0,2).toUpperCase()}
+        </div>
+        <div>
+         <div style="font-size:14px;font-weight:700;font-family:var(--font-body)">${salesRep}</div>
+          <div style="font-size:11px;color:var(--text2);font-family:var(--font-body)">${selRow?.schools || 0} schools · ${(selRow?.total || 0).toLocaleString()} candidates</div>
+        </div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-left:8px">
+          ${SALES_GRADE_LABELS.map((lbl, i) => gradeTotals[i] > 0 ? `
+            <div style="text-align:center;padding:4px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);min-width:38px">
+             <div style="font-size:13px;font-weight:700;color:${col};font-family:var(--font-body)">${gradeTotals[i]}</div>
+                  <div style="font-size:9px;color:var(--text3);font-family:var(--font-body)">${lbl}</div>
+            </div>` : "").join("")}
+        </div>
+        ${cachedBill > 0 ? `
+          <div style="margin-left:auto;text-align:right">
+           <div style="font-size:18px;font-weight:600;color:var(--green);font-family:var(--font-body)">${cachedBill.toLocaleString()}</div>
+            <div style="font-size:10px;color:var(--text3);font-family:var(--font-body)">Total Bill</div>
+          </div>` : (hasSheet && !schools ? `<div style="margin-left:auto;font-size:11px;color:var(--text3)">Loading…</div>` : "")}
+        <button onclick="switchSalesRep('${salesRep}')"
+          style="padding:5px 12px;border-radius:var(--r-sm);font-size:11px;font-weight:600;
+            border:1px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;flex-shrink:0">
+          ✕ Clear
+        </button>
+      </div>`;
+
+    let schoolRowsHTML = "";
+    if (!hasSheet) {
+      schoolRowsHTML = `<tr><td colspan="${4 + SALES_GRADE_LABELS.length + 2}"
+        style="text-align:center;padding:24px;color:var(--text2);font-size:13px">
+        No individual sheet configured for ${salesRep}.
+      </td></tr>`;
+    } else if (!schools) {
+      schoolRowsHTML = `<tr><td colspan="${4 + SALES_GRADE_LABELS.length + 2}"
+        id="school-rows-loading" style="text-align:center;padding:24px">
+        <div style="display:inline-flex;align-items:center;gap:10px;color:var(--text2);font-size:13px">
+          <div class="spinner" style="width:20px;height:20px;border-width:2px"></div>
+          Loading schools for ${salesRep}…
+        </div>
+      </td></tr>`;
+      // Async fetch — patch just the tbody when ready
+      const snapRep = salesRep;
+      (async () => {
+        const raw = await fetchSalesProxy(repCfg.sheet);
+        if (raw) salesRepCache[repCfg.sheet] = raw;
+        if (salesRep !== snapRep) return; // rep changed while loading
+        const freshSchools = raw ? parseRepSheet(raw) : null;
+        const loadingCell  = document.getElementById("school-rows-loading");
+        if (!loadingCell) return;
+        const tbody = loadingCell.closest("tbody");
+        if (tbody) tbody.innerHTML = buildSchoolTbody(freshSchools, bCfg);
+        // Update bill in strip
+        if (freshSchools) {
+          const bill = freshSchools.reduce((s, r) => s + r.bill, 0);
+          if (bill > 0) renderSalesBranchTable(repRows, data); // re-render strip with bill
+        }
+      })();
+    } else {
+      schoolRowsHTML = buildSchoolTbody(schools, bCfg);
+    }
+
+    wrap.innerHTML = summaryStrip + `
+      <div class="table-wrap scroll" style="border-radius:var(--r-lg)">
+        <table style="min-width:980px">
+          <thead><tr>
+            <th style="min-width:40px">#</th>
+            <th style="min-width:190px">SCHOOL</th>
+            <th style="min-width:110px">LOCATION</th>
+            <th style="min-width:115px;font-family:var(--font-mono)">CONTACT</th>
+            ${SALES_GRADE_LABELS.map(l => `<th style="text-align:center;min-width:42px">${l}</th>`).join("")}
+            <th style="text-align:center;min-width:45px">LANG</th>
+            <th style="text-align:center;min-width:40px">FR</th>
+            <th style="text-align:right;min-width:80px">BILL</th>
+          </tr></thead>
+          <tbody>${schoolRowsHTML}</tbody>
+        </table>
+      </div>`;
+
+    const old = document.getElementById("sales-rep-detail-wrap");
+    if (old) old.innerHTML = "";
+    return;
+  }
+
+  // ── No rep selected: standard rep summary table ──
+  if (cnt) cnt.textContent = filtered.length + " reps";
+
+  if (!filtered.length) {
+    wrap.innerHTML = `<div class="table-wrap"><table><thead><tr>
+      <th>#</th><th>MARKETER</th><th>SCHOOLS</th>
+      ${SALES_GRADE_LABELS.map(l => `<th style="text-align:center">${l}</th>`).join("")}
+      <th style="text-align:right">TOTAL</th>
+    </tr></thead>
+    <tbody><tr class="empty-row"><td colspan="${4 + SALES_GRADE_LABELS.length}">
+      ${data ? "No data found." : "Loading… (check proxy URL in CONFIG.SALES_PROXY)"}
+    </td></tr></tbody></table></div>`;
+    return;
+  }
+
+  const gradeTotals  = SALES_GRADE_LABELS.map((_, gi) => filtered.reduce((s, r) => s + (r.grades[gi] || 0), 0));
+  const grandTotal   = filtered.reduce((s, r) => s + r.total, 0);
+  const totalSchools = filtered.reduce((s, r) => s + r.schools, 0);
+
+  wrap.innerHTML = `<div class="table-wrap scroll" style="border-radius:var(--r-lg) var(--r-lg) 0 0">
+    <table style="min-width:900px">
+      <thead><tr>
+        <th>#</th>
+        <th style="min-width:130px">MARKETER</th>
+        <th style="text-align:center">SCHOOLS</th>
+        ${SALES_GRADE_LABELS.map(l => `<th style="text-align:center;min-width:44px">${l}</th>`).join("")}
+        <th style="text-align:right;min-width:75px">TOTAL</th>
+      </tr></thead>
+      <tbody>
+        ${filtered.map(r => {
+          const isSelected = salesRep === r.name;
+          const hasSheet   = bCfg?.reps.find(x => x.name === r.name)?.sheet;
+          return `<tr style="transition:background .15s;cursor:${hasSheet ? 'pointer' : 'default'};
+              background:${isSelected ? bCfg.color + '14' : 'transparent'};
+              outline:${isSelected ? '1px solid ' + bCfg.color + '44' : 'none'}"
+            onclick="${hasSheet ? `switchSalesRep('${r.name}')` : ''}"
+            onmouseover="this.style.background='var(--bg2)'"
+            onmouseout="this.style.background='${isSelected ? bCfg.color + '14' : 'transparent'}'">
+            <td style="color:var(--text3);font-family:var(--font-mono);font-size:11px">${r.sn}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="width:28px;height:28px;border-radius:50%;background:${bCfg.color}22;border:1px solid ${bCfg.color}44;
+                  display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:${bCfg.color}">
+                  ${r.name.slice(0,2).toUpperCase()}
+                </div>
+                <div>
+                  <div style="font-weight:700;font-size:13px">${r.name}</div>
+                  ${hasSheet ? `<div style="font-size:10px;color:var(--text3)">Click to view schools</div>`
+                             : '<div style="font-size:10px;color:var(--text3)">No sheet</div>'}
+                </div>
+              </div>
+            </td>
+            <td style="text-align:center;font-family:var(--font-mono);font-weight:700;color:var(--blue)">${r.schools || "—"}</td>
+            ${r.grades.map(v => `<td style="text-align:center;font-family:var(--font-mono);font-size:12px;color:${v > 0 ? 'var(--text)' : 'var(--text3)'}">${v > 0 ? v.toLocaleString() : "—"}</td>`).join("")}
+            <td style="text-align:right;font-family:var(--font-mono);font-weight:700;color:var(--green)">${r.total.toLocaleString()}</td>
+          </tr>`;
+        }).join("")}
+      </tbody>
+      <tfoot>
+        <tr style="background:var(--bg2);border-top:2px solid var(--border2)">
+          <td></td>
+          <td style="font-family:var(--font-display);font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em">BRANCH TOTALS</td>
+          <td style="text-align:center;font-family:var(--font-mono);font-weight:800;color:var(--blue)">${totalSchools.toLocaleString()}</td>
+          ${gradeTotals.map(v => `<td style="text-align:center;font-family:var(--font-mono);font-weight:700;color:var(--blue);font-size:12px">${v.toLocaleString()}</td>`).join("")}
+          <td style="text-align:right;font-family:var(--font-mono);font-weight:800;color:var(--green)">${grandTotal.toLocaleString()}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>`;
+
+  const old = document.getElementById("sales-rep-detail-wrap");
+  if (old) old.innerHTML = "";
+}
+
+async function switchSalesRep(repName) {
+  const bCfg   = CONFIG.SALES_BRANCHES[salesView];
+  const repCfg = bCfg?.reps.find(r => r.name === repName);
+
+  if (salesRep === repName) {
+    salesRep = "";
+    const repSel = document.getElementById("sales-branch-rep");
+    if (repSel) repSel.value = "";
+    const raw  = salesDataCache[bCfg?.sheetName];
+    const data = raw ? parseBranchSummary(raw) : null;
+    if (data) renderSalesBranchTable(data.repRows, data);
+    return;
+  }
+
+  salesRep = repName;
+  const repSel = document.getElementById("sales-branch-rep");
+  if (repSel) repSel.value = repName;
+
+  const raw  = salesDataCache[bCfg?.sheetName];
+  const data = raw ? parseBranchSummary(raw) : null;
+
+  // Always render instantly from whatever is cached — no waiting
+  if (data) renderSalesBranchTable(data.repRows, data);
+
+  // Only fetch if this rep sheet was never cached (background only, no spinner)
+  if (repCfg?.sheet && !salesRepCache[repCfg.sheet]) {
+    const fetched = await fetchSalesProxy(repCfg.sheet);
+    if (fetched) {
+      salesRepCache[repCfg.sheet] = fetched;
+      if (salesRep === repName) {
+        const freshData = salesDataCache[bCfg?.sheetName]
+          ? parseBranchSummary(salesDataCache[bCfg.sheetName]) : null;
+        if (freshData) renderSalesBranchTable(freshData.repRows, freshData);
+        renderSalesKPIs(freshData);
+      }
+    }
+  }
+}
+async function loadAndShowRepDetail(repName) {
+  const bCfg  = CONFIG.SALES_BRANCHES[salesView];
+  const repCfg= bCfg?.reps.find(r => r.name === repName);
+  const detailWrap = document.getElementById("sales-rep-detail-wrap");
+  if (!detailWrap) return;
+
+  if (!repCfg?.sheet) {
+    detailWrap.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);padding:32px;text-align:center;color:var(--text2)">
+      No individual school sheet found for <strong>${repName}</strong>.
+    </div>`;
+    return;
+  }
+
+  detailWrap.innerHTML = `<div class="loading-wrap"><div class="spinner"></div></div>`;
+
+  if (!salesRepCache[repCfg.sheet]) {
+    const raw = await fetchSalesProxy(repCfg.sheet);
+    if (raw) salesRepCache[repCfg.sheet] = raw;
+  }
+
+  const repRaw   = salesRepCache[repCfg.sheet];
+  const schools  = repRaw ? parseRepSheet(repRaw) : null;
+
+  renderSalesRepDetail(repName, schools, bCfg);
+}
+
+function renderSalesRepDetail(repName, schools, bCfg) {
+  const detailWrap = document.getElementById("sales-rep-detail-wrap");
+  if (!detailWrap) return;
+
+  if (!schools || !schools.length) {
+    detailWrap.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);padding:32px;text-align:center;color:var(--text2)">
+      No school data available for <strong>${repName}</strong> — check proxy.
+    </div>`;
+    return;
+  }
+
+  const totalSchools = schools.length;
+  const totalCands   = schools.reduce((s,r) => s + r.total, 0);
+  const totalBill    = schools.reduce((s,r) => s + r.bill, 0);
+  const withFrench   = schools.filter(r => (r.french||"").toUpperCase() === "YES").length;
+  const gradeTotals  = SALES_GRADE_LABELS.map((_,gi) => schools.reduce((s,r)=>s+(r.grades[gi]||0),0));
+
+  const q = (document.getElementById("sales-rep-school-search")?.value || "").toLowerCase();
+  const filtered = q ? schools.filter(r =>
+    r.school.toLowerCase().includes(q) || r.location.toLowerCase().includes(q)
+  ) : schools;
+
+  detailWrap.innerHTML = `
+    <!-- Rep summary header -->
+    <div style="background:var(--bg1);border:1px solid ${bCfg.color}44;border-radius:var(--r-lg);overflow:hidden;margin-bottom:16px">
+      <div style="background:${bCfg.color}0e;border-bottom:1px solid var(--border);padding:16px 22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div style="width:48px;height:48px;border-radius:50%;background:${bCfg.color}22;border:2px solid ${bCfg.color}55;
+          display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:${bCfg.color};flex-shrink:0">
+          ${repName.slice(0,2).toUpperCase()}
+        </div>
+        <div>
+          <div style="font-size:16px;font-weight:800;font-family:var(--font-display)">${repName}</div>
+          <div style="font-size:12px;color:var(--text2)">${bCfg.label} · ${totalSchools} schools</div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:20px;flex-wrap:wrap;text-align:right">
+          <div>
+            <div style="font-size:20px;font-weight:800;color:var(--blue);font-family:var(--font-display)">${totalSchools}</div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">Schools</div>
+          </div>
+          <div>
+            <div style="font-size:20px;font-weight:800;color:var(--teal);font-family:var(--font-display)">${totalCands.toLocaleString()}</div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">Candidates</div>
+          </div>
+          <div>
+            <div style="font-size:20px;font-weight:800;color:var(--green);font-family:var(--font-display)">${totalBill.toLocaleString()}</div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">Total Bill</div>
+          </div>
+          <div>
+            <div style="font-size:20px;font-weight:800;color:var(--purple);font-family:var(--font-display)">${withFrench}</div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">With French</div>
+          </div>
+        </div>
+      </div>
+      <!-- Grade level breakdown -->
+      <div style="padding:14px 22px;border-bottom:1px solid var(--border)">
+        <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Candidates by Level</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${SALES_GRADE_LABELS.map((lbl,i) => `
+            <div style="text-align:center;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);min-width:52px">
+              <div style="font-size:16px;font-weight:800;color:${bCfg.color};font-family:var(--font-display)">${gradeTotals[i]>0?gradeTotals[i].toLocaleString():"0"}</div>
+              <div style="font-size:10px;color:var(--text3)">${lbl}</div>
+            </div>`).join("")}
+        </div>
+      </div>
+    </div>
+
+    <!-- Schools table -->
+    <div class="sh" style="margin-bottom:12px">
+      <div class="sh-left">
+        <div class="sh-title">Schools — ${repName}</div>
+        <span class="sh-count" id="sales-rep-school-count">${filtered.length} schools</span>
+      </div>
+      <div class="sh-right">
+        <div class="search-wrap"><span class="s-icon">⌕</span>
+          <input class="search-input" id="sales-rep-school-search" placeholder="Search school…"
+            oninput="filterRepSchools('${repName}')" style="width:200px">
+        </div>
+      </div>
+    </div>
+
+    <div class="table-wrap scroll" style="border-radius:var(--r-lg)">
+      <table style="min-width:980px">
+        <thead><tr>
+          <th>#</th>
+          <th style="min-width:190px">SCHOOL</th>
+          <th style="min-width:110px">LOCATION</th>
+          <th style="min-width:115px;font-family:var(--font-mono)">CONTACT</th>
+          ${SALES_GRADE_LABELS.map(l=>`<th style="text-align:center;min-width:42px">${l}</th>`).join("")}
+          <th style="text-align:center;min-width:45px">LANG</th>
+          <th style="text-align:center;min-width:40px">FR</th>
+          <th style="text-align:right;min-width:80px">BILL</th>
+        </tr></thead>
+        <tbody>
+          ${filtered.map(r => `<tr style="transition:background .12s" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background=''">
+            <td style="color:var(--text3);font-family:var(--font-mono);font-size:11px">${r.sn}</td>
+            <td style="font-weight:500;max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.school.replace(/"/g,'&quot;')}">${r.school}</td>
+            <td style="font-size:12px;color:var(--text2);white-space:nowrap">${r.location||"—"}</td>
+            <td style="font-family:var(--font-mono);font-size:11px;color:var(--text2);white-space:nowrap">${r.contact||"—"}</td>
+            ${r.grades.map(v=>`<td style="text-align:center;font-family:var(--font-mono);font-size:12px;color:${v>0?'var(--text)':'var(--text3)'}">${v>0?v:"—"}</td>`).join("")}
+            <td style="text-align:center;font-size:11px;color:var(--text2)">${r.lang||"—"}</td>
+            <td style="text-align:center">
+              <span class="${(r.french||"").toUpperCase()==='YES'?'badge badge-green':'badge badge-amber'}" style="font-size:10px">${r.french||"—"}</span>
+            </td>
+            <td style="text-align:right;font-family:var(--font-mono);font-weight:600;color:${r.bill>0?'var(--green)':'var(--text3)'}">
+              ${r.bill>0?r.bill.toLocaleString():"—"}
+            </td>
+          </tr>`).join("")}
+        </tbody>
+        <tfoot>
+          <tr style="background:var(--bg2);border-top:2px solid var(--border2)">
+            <td></td>
+            <td style="font-family:var(--font-display);font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em">TOTALS</td>
+            <td colspan="2"></td>
+            ${SALES_GRADE_LABELS.map((_,gi)=>{
+              const t = filtered.reduce((s,r)=>s+(r.grades[gi]||0),0);
+              return `<td style="text-align:center;font-family:var(--font-mono);font-weight:700;color:var(--blue);font-size:12px">${t>0?t.toLocaleString():""}</td>`;
+            }).join("")}
+            <td colspan="2"></td>
+            <td style="text-align:right;font-family:var(--font-mono);font-weight:800;color:var(--green)">
+              ${filtered.reduce((s,r)=>s+r.bill,0).toLocaleString()}
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>`;
+}
+
+function filterRepSchools(repName) {
+  const bCfg = CONFIG.SALES_BRANCHES[salesView];
+  const repCfg = bCfg?.reps.find(r => r.name === repName);
+  if (!repCfg?.sheet) return;
+  const repRaw = salesRepCache[repCfg.sheet];
+  const schools = repRaw ? parseRepSheet(repRaw) : null;
+  if (schools) renderSalesRepDetail(repName, schools, bCfg);
+}
+
+function filterSalesBranchSearch() {
+  const bCfg = CONFIG.SALES_BRANCHES[salesView];
+  const raw  = salesDataCache[bCfg?.sheetName];
+  const data = raw ? parseBranchSummary(raw) : null;
+  if (data) renderSalesBranchTable(data.repRows, data);
+}
+
+/* ══════════════════════════════════════════
+   SALES — SHARED KPI RENDERER
+══════════════════════════════════════════ */
+function getBranchTotalBill(branchKey) {
+  const bCfg = CONFIG.SALES_BRANCHES[branchKey];
+  if (!bCfg) return 0;
+  let total = 0;
+  bCfg.reps.forEach(repCfg => {
+    if (!repCfg.sheet) return;
+    const raw = salesRepCache[repCfg.sheet];
+    if (!raw) return;
+    const schools = parseRepSheet(raw);
+    if (!schools) return;
+    total += schools.reduce((s, r) => s + r.bill, 0);
+  });
+  return total;
+}
+
+async function loadAllRepSheetsInBackground() {
+  const allReps = [];
+  Object.values(CONFIG.SALES_BRANCHES).forEach(bCfg => {
+    bCfg.reps.forEach(r => { if (r.sheet && !salesRepCache[r.sheet]) allReps.push(r.sheet); });
+  });
+  if (!allReps.length) return;
+
+  const results = await Promise.all(allReps.map(sheet => fetchSalesProxy(sheet)));
+  allReps.forEach((sheet, i) => { if (results[i]) salesRepCache[sheet] = results[i]; });
+
+  const topDiv = document.getElementById("sales-kpi-top");
+  if (!topDiv) return;
+
+  let data = null;
+  if (salesView === "general") {
+    const raw = salesDataCache["STATISTICS"];
+    data = raw ? parseStatistics(raw) : null;
+  } else {
+    const bCfg = CONFIG.SALES_BRANCHES[salesView];
+    const raw  = salesDataCache[bCfg?.sheetName];
+    data = raw ? parseBranchSummary(raw) : null;
+  }
+  renderSalesKPIs(data);
+}
+
+function renderSalesKPIs(data) {
+  const topDiv = document.getElementById("sales-kpi-top");
+  const botDiv = document.getElementById("sales-kpi-bottom");
+  if (!topDiv || !botDiv) return;
+
+  const individSchools = data?.individSchools || 0;
+  const distSchools    = data?.distSchools    || 0;
+  const totalSchools   = data?.totalSchools   || (individSchools + distSchools) || 0;
+  const repRows        = data?.repRows        || [];
+  const totalCands     = repRows.reduce((s, r) => s + r.total, 0);
+  const totalReps      = repRows.filter(r => r.schools > 0).length;
+  const topRep         = repRows.slice().sort((a, b) => b.total - a.total)[0];
+  const topRepSchools  = repRows.slice().sort((a, b) => b.schools - a.schools)[0];
+
+  let totalBill = 0;
+  let billNote  = "";
+  if (salesView === "general") {
+    Object.keys(CONFIG.SALES_BRANCHES).forEach(bk => { totalBill += getBranchTotalBill(bk); });
+    const loadedReps = Object.keys(salesRepCache).length;
+    if (loadedReps > 0) billNote = loadedReps + " rep sheets loaded";
+  } else {
+    totalBill = getBranchTotalBill(salesView);
+    const bCfg = CONFIG.SALES_BRANCHES[salesView];
+    const totalRepSheets  = (bCfg?.reps || []).filter(r => r.sheet).length;
+    const loadedRepSheets = (bCfg?.reps || []).filter(r => r.sheet && salesRepCache[r.sheet]).length;
+    if (loadedRepSheets < totalRepSheets) billNote = loadedRepSheets + "/" + totalRepSheets + " reps loaded";
+  }
+
+  topDiv.innerHTML = `
+    <div class="kpi-card blue"><div class="kpi-glow"></div>
+      <div class="kpi-label">Indiv. Schools</div>
+      <div class="kpi-value">${individSchools.toLocaleString()}</div>
+      <div class="kpi-sub">Individual school count</div>
+      <div class="kpi-icon"></div>
+    </div>
+    <div class="kpi-card amber"><div class="kpi-glow"></div>
+      <div class="kpi-label">District Schools</div>
+      <div class="kpi-value">${distSchools.toLocaleString()}</div>
+      <div class="kpi-sub">Schools in districts</div>
+      <div class="kpi-icon"></div>
+    </div>
+    <div class="kpi-card green"><div class="kpi-glow"></div>
+      <div class="kpi-label">Total Schools</div>
+      <div class="kpi-value">${totalSchools.toLocaleString()}</div>
+      <div class="kpi-sub">Combined total</div>
+      <div class="kpi-icon"></div>
+    </div>
+    <div class="kpi-card teal"><div class="kpi-glow"></div>
+      <div class="kpi-label">Total Bill</div>
+      <div class="kpi-value">${totalBill > 0 ? totalBill.toLocaleString() : "—"}</div>
+      <div class="kpi-sub">${billNote || "All rep schools combined"}</div>
+      <div class="kpi-icon"></div>
+    </div>`;
+
+  botDiv.innerHTML = `
+    <div class="kpi-card teal"><div class="kpi-glow"></div>
+      <div class="kpi-label">Total Enrolment</div>
+      <div class="kpi-value">${totalCands.toLocaleString()}</div>
+      <div class="kpi-sub">All classes combined</div>
+      <div class="kpi-icon"></div>
+    </div>
+    <div class="kpi-card orange"><div class="kpi-glow"></div>
+      <div class="kpi-label">Active Reps</div>
+      <div class="kpi-value">${totalReps.toLocaleString()}</div>
+      <div class="kpi-sub">Reps with sheets</div>
+      <div class="kpi-icon"></div>
+    </div>
+    <div class="kpi-card green"><div class="kpi-glow"></div>
+      <div class="kpi-label">Top by Enrolment</div>
+      <div class="kpi-value" style="font-size:16px;word-break:break-word">${topRep?.name || "—"}</div>
+      <div class="kpi-sub">${(topRep?.total || 0).toLocaleString()} candidates</div>
+      <div class="kpi-icon"></div>
+    </div>
+    <div class="kpi-card blue"><div class="kpi-glow"></div>
+      <div class="kpi-label">Top by Schools</div>
+      <div class="kpi-value" style="font-size:16px;word-break:break-word">${topRepSchools?.name || "—"}</div>
+      <div class="kpi-sub">${(topRepSchools?.schools || 0)} schools</div>
+      <div class="kpi-icon"></div>
+    </div>`;
+
+  if (!data) {
+    topDiv.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--text2);background:var(--bg1);border:1px solid var(--border);border-radius:var(--r-lg)">
+      No data yet — Loading.....  </strong> Almost Here
+    </div>`;
+    botDiv.innerHTML = "";
+  }
+}
+
+/* ── Stubs kept for loadAllData compatibility ── */
+function renderSalesRows() {}
+function filterSales() {}
+
+
 
 /* ══════════════════════════════════════════
    DEBT
@@ -3707,9 +4907,11 @@ function renderFinance(panel) {
  const salR  = liveData.sales?.rows||[];
   const debR  = liveData.debt?.rows||[];
   const examRF = liveData.exams?.rows||[];
-  const salesTot  = examRF.reduce((s,r) => s + parseFloat((r[21]||"0").toString().replace(/[^0-9.]/g,"")), 0);
   const commTot   = salR.reduce((s,r)=>s+parseFloat(r[8]||0),0);
   const debtTot   = debR.reduce((s,r)=>s+parseFloat(r[7]||0),0);
+
+ // Total Bill — from pre-computed cache (instant, same source as Exams Office tab)
+  const salesTot = _cachedTotalBill || examRF.reduce((s,r) => s + parseFloat((r[21]||"0").toString().replace(/[^0-9.]/g,"")), 0);
   const recRate   = (() => {
     const owed = debR.reduce((s,r)=>s+parseFloat(r[5]||0),0);
     const paid = debR.reduce((s,r)=>s+parseFloat(r[6]||0),0);
@@ -4666,7 +5868,7 @@ const DEPT_COLORS = {
 };
 const REPORTING_OFFICERS = [
   "Mr. Lawrence Asante", "Miss. Mavis Oppong", "Mr. John Attipoe", "Miss. Sarah Hammond", "Mr. Bright Boamah", "Mr. Gabriel Amenyo", "Mr. Isaac Opare", "Mr. Atsu Mensah Daniel",
-  "Mr. Kingsley Arhin", "Mr. Emmanuel  Donkor", "Mr. Wisdom Bittor"
+  "Mr. Kingsley Arhin", "Mr. Emmanuel  Donkor", "Mr. Wisdom Bittor", "Gabriel Amenyo", "Cyril Amengor", "Kojo Williams"
 ];
 /* ── State ── */
 let staffList       = [];       // all staff from Firestore
@@ -4678,7 +5880,7 @@ let staffSearchQ     = "";
 let staffLoading     = false;
 // Health module state
 let healthBranch     = "greater";   // active branch
-let healthData       = null;         // raw rows from proxy
+let healthData       = null;         
 let healthSubTab     = "database";  // "database" | "report"
 let healthSearchStaff = "";
 let addStaffDraft    = {};      // autosave draft
