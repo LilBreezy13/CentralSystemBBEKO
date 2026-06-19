@@ -1408,56 +1408,216 @@ let currentUser       = null;
 let currentTab        = "overview";
 let currentSessionId  = null;
 
-/* ── Login Session Tracking ── */
-const LOGIN_SESSIONS_KEY = "bb_login_sessions";
+/* ── Login Session Tracking — Firestore ── */
+const LOGIN_SESSIONS_KEY = "bb_login_sessions"; // kept for legacy reads only
+
 function getLoginSessions() {
-  try {
-    const raw = localStorage.getItem(LOGIN_SESSIONS_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch(e) { return []; }
+  // Return cached in-memory copy (populated by loadLoginSessionsFromFirestore)
+  return window._loginSessionsCache || [];
 }
-function saveLoginSessions(sessions) {
+
+async function loadLoginSessionsFromFirestore() {
+  const fb = await staffDb();
+  if (!fb) return;
   try {
-    if (sessions.length > 500) sessions = sessions.slice(-500);
-    localStorage.setItem(LOGIN_SESSIONS_KEY, JSON.stringify(sessions));
-  } catch(e) {}
+    const { db, collection, getDocs } = fb;
+    const snap = await getDocs(collection(db, "loginSessions"));
+    const all  = snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
+    // Sort in JS — no index needed
+    all.sort((a, b) => (b.loginTs || 0) - (a.loginTs || 0));
+    window._loginSessionsCache = all;
+    console.log("Sessions loaded from Firestore:", all.length);
+  } catch(e) {
+    console.error("Could not load login sessions:", e);
+    window._loginSessionsCache = [];
+  }
 }
-function recordLogin(user) {
-  const sessions = getLoginSessions();
-  const id = Date.now().toString(36) + Math.random().toString(36).slice(2,7);
-  sessions.push({
+async function recordLogin(user) {
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  currentSessionId = id;
+  try { 
+    localStorage.setItem("bb_current_session_id", id); 
+  } catch(e) {
+    console.warn("Could not save session ID to localStorage:", e);
+  }
+ 
+  const sessionData = {
     id,
     username: user.username,
     name: user.name,
     role: user.role,
     loginTs: Date.now(),
     logoutTs: null,
-    lastSeenTs: Date.now()
-  });
-  saveLoginSessions(sessions);
-  currentSessionId = id;
-  try { localStorage.setItem("bb_current_session_id", id); } catch(e) {}
-}
-function recordLogout() {
-  if (!currentSessionId) return;
-  const sessions = getLoginSessions();
-  const idx = sessions.findIndex(s => s.id === currentSessionId);
-  if (idx !== -1) {
-    sessions[idx].logoutTs = Date.now();
-    saveLoginSessions(sessions);
+    lastSeenTs: Date.now(),
+    // NEW: Track device and browser info for debugging
+    userAgent: navigator.userAgent,
+    timestamp: new Date().toISOString()
+  };
+ 
+  // Optimistic local cache update - always add to local cache first
+  if (!window._loginSessionsCache) window._loginSessionsCache = [];
+  window._loginSessionsCache.unshift({ _docId: id, ...sessionData });
+ 
+  // Try to save to Firestore with exponential backoff retry logic
+  let retries = 0;
+  const maxRetries = 3;
+  let lastError = null;
+  
+  while (retries < maxRetries) {
+    try {
+      const fb = await staffDb();
+      if (!fb) {
+        retries++;
+        lastError = "Firebase not initialized";
+        console.warn(`Firebase not ready (attempt ${retries}/${maxRetries}), retrying in 1.5s...`);
+        
+        if (retries < maxRetries) {
+          // Wait 1.5 seconds before retry
+          await new Promise(r => setTimeout(r, 1500));
+          continue;
+        } else {
+          console.error("Firebase failed to initialize after 3 attempts");
+          // Don't block login - show warning and continue
+          try {
+            showToast("Server connection delayed - login recorded locally", 4000);
+          } catch(e) {
+            console.warn("Could not show toast:", e);
+          }
+          return false; // Indicate failure but allow user to continue
+        }
+      }
+      
+      const { db, collection, addDoc } = fb;
+      const docRef = await addDoc(collection(db, "loginSessions"), sessionData);
+      console.log("Login session saved to Firebase - Doc ID:", docRef.id);
+      return true; // Success!
+      
+    } catch(e) {
+      retries++;
+      lastError = e.message || String(e);
+      console.error(`Firestore write error (attempt ${retries}/${maxRetries}):`, {
+        message: e.message,
+        code: e.code,
+        details: e
+      });
+      
+      if (retries < maxRetries) {
+        // Wait 1.5 seconds before retry with exponential backoff
+        const waitTime = 1500 * retries;
+        console.warn(`Retrying in ${waitTime}ms...`);
+        await new Promise(r => setTimeout(r, waitTime));
+      } else {
+        console.error(`Failed to save login session after ${maxRetries} retries. Last error:`, lastError);
+        try {
+          showToast("Login recorded locally but not synced - IT will check logs", 5000);
+        } catch(e) {
+          console.warn("Could not show toast:", e);
+        }
+        return false;
+      }
+    }
   }
+  
+  return false;
+}
+
+
+async function recordLogout() {
+  if (!currentSessionId) {
+    console.warn("No current session ID to log out");
+    return;
+  }
+  
+  const sid = currentSessionId;
   currentSessionId = null;
-  try { localStorage.removeItem("bb_current_session_id"); } catch(e) {}
-}
-function touchSession() {
-  if (!currentSessionId) return;
-  const sessions = getLoginSessions();
-  const idx = sessions.findIndex(s => s.id === currentSessionId);
-  if (idx !== -1 && !sessions[idx].logoutTs) {
-    sessions[idx].lastSeenTs = Date.now();
-    saveLoginSessions(sessions);
+  try { 
+    localStorage.removeItem("bb_current_session_id"); 
+  } catch(e) {
+    console.warn("Could not remove session ID from localStorage:", e);
+  }
+ 
+  // Update local cache immediately
+  const cache = window._loginSessionsCache || [];
+  const local = cache.find(s => s.id === sid);
+  if (local) {
+    local.logoutTs = Date.now();
+    local.lastSeenTs = Date.now();
+  }
+ 
+  // Try to update Firestore with retry logic
+  let retries = 0;
+  const maxRetries = 3;
+  
+  while (retries < maxRetries) {
+    try {
+      const fb = await staffDb();
+      if (!fb) {
+        retries++;
+        console.warn(`Firebase not ready for logout (attempt ${retries}/${maxRetries})`);
+        
+        if (retries < maxRetries) {
+          await new Promise(r => setTimeout(r, 1000));
+          continue;
+        } else {
+          console.error("Could not reach Firebase to record logout");
+          return;
+        }
+      }
+      
+      const { db, collection, getDocs, query, where, doc, updateDoc } = fb;
+      const q = query(collection(db, "loginSessions"), where("id", "==", sid));
+      const snap = await getDocs(q);
+      
+      if (!snap.empty) {
+        await updateDoc(doc(db, "loginSessions", snap.docs[0].id), { 
+          logoutTs: Date.now(),
+          lastSeenTs: Date.now()
+        });
+        console.log("Logout recorded in Firebase");
+        return;
+      } else {
+        console.warn("Session not found in Firestore for logout update");
+        return;
+      }
+      
+    } catch(e) {
+      retries++;
+      console.error(` Logout update error (attempt ${retries}/${maxRetries}):`, e);
+      
+      if (retries < maxRetries) {
+        await new Promise(r => setTimeout(r, 1000));
+      } else {
+        console.error(`Failed to record logout after ${maxRetries} retries`);
+        return;
+      }
+    }
   }
 }
+ 
+
+
+
+async function touchSession() {
+  if (!currentSessionId) return;
+  const sid = currentSessionId;
+
+  // Update local cache
+  const cache = window._loginSessionsCache || [];
+  const local = cache.find(s => s.id === sid);
+  if (local && !local.logoutTs) local.lastSeenTs = Date.now();
+
+  const fb = await staffDb();
+  if (!fb) return;
+  try {
+    const { db, collection, getDocs, query, where, doc, updateDoc } = fb;
+    const q    = query(collection(db, "loginSessions"), where("id", "==", sid));
+    const snap = await getDocs(q);
+    if (!snap.empty && !snap.docs[0].data().logoutTs) {
+      await updateDoc(doc(db, "loginSessions", snap.docs[0].id), { lastSeenTs: Date.now() });
+    }
+  } catch(e) { /* silent */ }
+}
+
 function fmtDuration(ms) {
   if (ms < 0) ms = 0;
   const mins = Math.floor(ms / 60000);
@@ -1558,15 +1718,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const SESSION_TIMEOUT_HOURS = 8; 
   const savedSession  = localStorage.getItem("bb_session_user");
   const savedSessionTs = localStorage.getItem("bb_session_ts");
-
 if (savedSession && savedSessionTs) {
     const ageHours = (Date.now() - parseInt(savedSessionTs)) / 3600000;
     if (ageHours < SESSION_TIMEOUT_HOURS) {
       try {
         currentUser = JSON.parse(savedSession);
-        currentSessionId = localStorage.getItem("bb_current_session_id") || null;
+        // Always record a fresh session to Firestore on every page load
+        // so all devices appear in Login Activity
+        currentSessionId = null; // force a new session ID
+        localStorage.removeItem("bb_current_session_id");
         document.getElementById("login-screen").style.display = "none";
         showApp();
+        recordLogin(currentUser); // creates new Firestore doc for this visit
         return;
       } catch(e) {
         localStorage.removeItem("bb_session_user");
@@ -1606,40 +1769,68 @@ function toggleTheme() {
 /* ══════════════════════════════════════════
    AUTH
 ══════════════════════════════════════════ */
-function doLogin() {
+async function doLogin() {
   const u = document.getElementById("login-user").value.trim().toLowerCase();
   const p = document.getElementById("login-pass").value;
   const err = document.getElementById("login-error");
-  const user = USERS.find(x => x.username === u && x.password === p);
-  if (!user) { err.style.display = "block"; return; }
-  currentUser = user; err.style.display = "none";
   
+  // Find user in credentials
+  const user = USERS.find(x => x.username === u && x.password === p);
+  if (!user) { 
+    err.style.display = "block";
+    console.warn("Login failed: invalid credentials");
+    return; 
+  }
+  
+  currentUser = user;
+  err.style.display = "none";
+  
+  // Save to localStorage
   localStorage.setItem("bb_session_user", JSON.stringify(user));
-  localStorage.setItem("bb_session_ts",   Date.now().toString());
-  recordLogin(user);
+  localStorage.setItem("bb_session_ts", Date.now().toString());
+  
+  console.log("👤 User logged in:", user.username);
+  
+  // Record login to Firestore
+  const loginRecorded = await recordLogin(user);
+  if (loginRecorded) {
+    console.log("Login session synced to server");
+  } else {
+    console.warn("Login synced to server is delayed/failed - will retry automatically");
+  }
+  
+  // Show app (even if Firebase save is delayed/failed - graceful degradation)
   showApp();
 }
-
-
-function doLogout() {
-  clearInterval(refreshTimer); refreshTimer = null;
-  recordLogout();
-  localStorage.removeItem("bb_session_user");   
-  localStorage.removeItem("bb_session_ts");    
-  clearCache();
-  currentUser       = null;
+async function doLogout() {
+  console.log("User logging out...");
   
-  currentUser       = null;
-  liveData          = JSON.parse(JSON.stringify(SAMPLE_DATA));
-  journalData       = null;
-  allBranchJournals = {};
+  clearInterval(refreshTimer);
+  refreshTimer = null;
+  
+  // Record logout to Firestore
+  await recordLogout();
+  
+  // Clear localStorage
+  localStorage.removeItem("bb_session_user");  
+  localStorage.removeItem("bb_session_ts");    
+  
+  // Clear data
+  clearCache();
+  currentUser = null;
+  liveData = JSON.parse(JSON.stringify(SAMPLE_DATA));
+  
+  // Hide app and show login
   document.getElementById("app").style.display = "none";
   document.getElementById("login-screen").style.display = "flex";
   document.getElementById("login-user").value = "";
   document.getElementById("login-pass").value = "";
   document.getElementById("login-error").style.display = "none";
+  
+  console.log("Logout complete");
   setTimeout(() => document.getElementById("login-user")?.focus(), 120);
 }
+ 
 
 /* ══════════════════════════════════════════
    APP SHELL
@@ -1668,6 +1859,8 @@ function showApp() {
   loadAllData();
   startRefresh();
 }
+
+
 
 function canSeeTab(tab) {
   const p = PERMISSIONS[currentUser.role];
@@ -2212,12 +2405,34 @@ salesViewSaved:   salesView   || "general",
   }
   loadAllData._isAutoRefresh = true; 
 }
-
 function startRefresh() {
   if (refreshTimer) clearInterval(refreshTimer);
   refreshTimer = setInterval(loadAllData, CONFIG.REFRESH_INTERVAL);
   touchSession();
   setInterval(touchSession, 30000);
+}
+
+// ── Debug helper: open browser console and type testFirestoreWrite() ──
+async function testFirestoreWrite() {
+  const fb = await staffDb();
+  if (!fb) { console.error("Firebase not ready"); return; }
+  try {
+    const { db, collection, addDoc } = fb;
+    const ref = await addDoc(collection(db, "loginSessions"), {
+      id: "test_" + Date.now(),
+      username: "test",
+      name: "Test User",
+      role: "test",
+      loginTs: Date.now(),
+      logoutTs: null,
+      lastSeenTs: Date.now()
+    });
+    console.log("✅ Firestore write OK — doc id:", ref.id);
+    alert("✅ Firestore write successful! Check Firebase Console → loginSessions collection.");
+  } catch(e) {
+    console.error("❌ Firestore write FAILED:", e);
+    alert("❌ Failed: " + e.message);
+  }
 }
 
 /* ══════════════════════════════════════════
@@ -5929,9 +6144,10 @@ function healthCondColor(cond) {
 let loginsFilterRole   = "";
 let loginsFilterStatus = "";
 let loginsSearchQ      = "";
-
-function renderLogins(panel) {
+async function renderLogins(panel) {
   touchSession();
+  panel.innerHTML = `<div class="loading-wrap"><div class="spinner"></div></div>`;
+  await loadLoginSessionsFromFirestore();
   const sessions = getLoginSessions().slice().sort((a,b) => b.loginTs - a.loginTs);
 
   const roles = [...new Set(sessions.map(s => s.role))].filter(Boolean).sort();
@@ -6083,36 +6299,68 @@ let staffFilterDept  = "";
 let staffFilterBranch= "";
 let staffSearchQ     = "";
 let staffLoading     = false;
-
-/* ── Activity Log (add / edit / download), with read/unread state ── */
+/* ── Staff Activity Log — Firestore ── */
 let staffActivityLog = [];
-function loadStaffActivityLog() {
+
+// Unread tracking stays local (per-browser) — only the log itself is shared
+const STAFF_ACTIVITY_READ_KEY = "bb_staff_activity_read_ts";
+function getLastReadTs() {
+  try { return parseInt(localStorage.getItem(STAFF_ACTIVITY_READ_KEY) || "0"); } catch(e) { return 0; }
+}
+function setLastReadTs() {
+  try { localStorage.setItem(STAFF_ACTIVITY_READ_KEY, Date.now().toString()); } catch(e) {}
+}
+
+async function loadStaffActivityLog() {
+  const fb = await staffDb();
+  if (!fb) { staffActivityLog = []; return; }
   try {
-    const raw = localStorage.getItem("bb_staff_activity_log");
-    staffActivityLog = raw ? JSON.parse(raw) : [];
-  } catch(e) { staffActivityLog = []; }
+    const { db, collection, getDocs } = fb;
+    const snap = await getDocs(collection(db, "staffActivity"));
+    const all  = snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
+    all.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+    staffActivityLog = all.slice(0, 100);
+    console.log("Staff activity loaded:", staffActivityLog.length);
+  } catch(e) {
+    console.warn("Could not load staff activity:", e);
+    staffActivityLog = [];
+  }
 }
+
 function saveStaffActivityLog() {
-  try { localStorage.setItem("bb_staff_activity_log", JSON.stringify(staffActivityLog)); } catch(e) {}
+  // No-op: Firestore is the source of truth
 }
-function logStaffActivity(type, staffId, staffName, dept, position) {
-  loadStaffActivityLog();
-  staffActivityLog.unshift({
-    type,                  // "add" | "edit" | "download"
-    staffId, staffName, dept, position,
+
+async function logStaffActivity(type, staffId, staffName, dept, position) {
+  const entry = {
+    type,
+    staffId: staffId || "",
+    staffName: staffName || "",
+    dept: dept || "",
+    position: position || "",
     actor: currentUser?.name || "Unknown",
     actorRole: currentUser?.role || "",
-    ts: Date.now(),
-    read: false
-  });
-  if (staffActivityLog.length > 300) staffActivityLog = staffActivityLog.slice(0, 300);
-  saveStaffActivityLog();
+    ts: Date.now()
+  };
+
+  // Optimistic local update
+  staffActivityLog.unshift({ ...entry });
+
+  const fb = await staffDb();
+  if (!fb) return;
+  try {
+    const { db, collection, addDoc } = fb;
+    await addDoc(collection(db, "staffActivity"), entry);
+  } catch(e) { console.warn("logStaffActivity Firestore error:", e); }
+
   updateStaffActivityBadge();
 }
+
 function unreadActivityCount() {
-  loadStaffActivityLog();
-  return staffActivityLog.filter(e => !e.read).length;
+  const lastRead = getLastReadTs();
+  return staffActivityLog.filter(e => e.ts > lastRead).length;
 }
+
 function updateStaffActivityBadge() {
   const el = document.getElementById("staff-activity-badge");
   if (el) el.textContent = unreadActivityCount();
@@ -6150,11 +6398,19 @@ const REQUIRED_FIELDS = {
 
 /* ── Firestore helpers ── */
 async function staffDb() {
-  // Wait up to 3s for Firebase to load
-  for (let i = 0; i < 30; i++) {
-    if (window.__bbFB) return window.__bbFB;
+  // Wait up to 10 seconds for Firebase to load (increased from 3 seconds)
+  const maxWaitTime = 10000; // 10 seconds
+  const startTime = Date.now();
+  
+  while (Date.now() - startTime < maxWaitTime) {
+    if (window.__bbFB) {
+      console.log("Firebase ready after " + (Date.now() - startTime) + "ms");
+      return window.__bbFB;
+    }
     await new Promise(r => setTimeout(r, 100));
   }
+  
+  console.error("Firebase initialization timeout after 10 seconds - window.__bbFB not available");
   return null;
 }
 
@@ -6263,8 +6519,8 @@ function fillRatePill(rate) {
 ══════════════════════════════════════════ */
 async function renderStaff(panel) {
   panel.innerHTML = `<div class="loading-wrap"><div class="spinner"></div></div>`;
-  loadStaffActivityLog();
-  await loadStaffFromFirestore();
+  await Promise.all([loadStaffFromFirestore(), loadStaffActivityLog()]);
+  updateStaffActivityBadge();
   buildStaffPanel(panel);
 }
 
@@ -6280,11 +6536,11 @@ const ACTIVITY_TYPE_META = {
   download: { label: "⬇ Downloaded", color: "var(--blue)",   bg: "rgba(61,156,245,.10)",  border: "rgba(61,156,245,.25)"  }
 };
 
-function openRecentActivityPanel() {
+async function openRecentActivityPanel() {
   const existing = document.getElementById("staff-activity-panel");
   if (existing) { closeRecentActivityPanel(); return; }
 
-  loadStaffActivityLog();
+  await loadStaffActivityLog();
 
   const fmtTs = (ms) => {
     const now  = Date.now();
@@ -6380,9 +6636,8 @@ function openRecentActivityPanel() {
 
   document.body.appendChild(panel);
 
-  // Mark everything as read once opened
-  staffActivityLog.forEach(e => e.read = true);
-  saveStaffActivityLog();
+// Mark everything as read (local timestamp — no Firestore write needed)
+  setLastReadTs();
   updateStaffActivityBadge();
 }
 
@@ -8318,6 +8573,85 @@ const now = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "lon
     if (btn) { btn.textContent = " Download Profile"; btn.disabled = false; }
   }
 }
+
+
+async function verifyFirebaseConnection() {
+  console.log(" Verifying Firebase connection...");
+  
+  const fb = await staffDb();
+  if (!fb) {
+    console.error(" Firebase connection failed - server is unreachable");
+    showToast(" Server error - refresh the page to try again", 5000);
+    return false;
+  }
+  
+  try {
+    // Quick test: try to read from loginSessions
+    const { collection, getDocs } = fb;
+    const snap = await getDocs(collection(fb.db, "loginSessions"));
+    console.log(" Firebase verified - " + snap.size + " total sessions on server");
+    return true;
+  } catch(e) {
+    console.error("Firebase read test failed:", e);
+    showToast(" Server read error - some features may be limited", 4000);
+    return false;
+  }
+}
+
+
+
+async function retryLoginSync() {
+  if (!currentUser) {
+    console.warn("No user logged in");
+    return;
+  }
+  
+  console.log("Retrying login session sync for:", currentUser.username);
+  const result = await recordLogin(currentUser);
+  if (result) {
+    console.log("Login session synced successfully!");
+    showToast(" Login synced to server", 3000);
+  } else {
+    console.error("Login sync still failing");
+    showToast("Login sync failed - check console", 4000);
+  }
+}
+ 
+async function checkFirebaseStatus() {
+  console.log("═══════════════════════════════════════");
+  console.log(" Firebase Status Check");
+  console.log("═══════════════════════════════════════");
+  
+  console.log("Current User:", currentUser);
+  console.log("Current Session ID:", currentSessionId);
+  console.log("Cached Sessions:", window._loginSessionsCache?.length || 0);
+  
+  const fb = await staffDb();
+  if (!fb) {
+    console.error("Firebase not initialized");
+    console.log("═══════════════════════════════════════");
+    return;
+  }
+  
+  console.log("Firebase is initialized");
+  
+  try {
+    const { collection, getDocs } = fb;
+    const snap = await getDocs(collection(fb.db, "loginSessions"));
+    console.log("Firestore loginSessions count:", snap.size);
+    console.log("Recent sessions:", snap.docs.slice(0, 3).map(d => ({
+      username: d.data().username,
+      name: d.data().name,
+      loginTs: new Date(d.data().loginTs).toLocaleString()
+    })));
+  } catch(e) {
+    console.error("Error reading from Firestore:", e);
+  }
+  
+  console.log("═══════════════════════════════════════");
+}
+ 
+
 </script>
 </body>
 </html>
