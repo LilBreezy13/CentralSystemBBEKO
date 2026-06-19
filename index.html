@@ -7219,11 +7219,11 @@ function buildAllSectionsHTML(d) {
   <input type="file" id="doc-file-input" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style="display:none" onchange="handleDocUpload(event)">
   <div class="doc-list" id="doc-file-list">
     ${addStaffFiles.documents.map((f,i)=>`<div class="doc-item">
-      <span>📄</span><span class="doc-item-name">${f.name}</span>
+      <span></span><span class="doc-item-name">${f.name}</span>
       <span class="doc-remove" onclick="removeDoc(${i})">✕</span>
     </div>`).join("")}
     ${(d.documentUrls||[]).map(doc=>`<div class="doc-item">
-      <span>📄</span>
+      <span></span>
       <span class="doc-item-name"><a href="${doc.url}" target="_blank" style="color:var(--blue)">${doc.name}</a></span>
     </div>`).join("")}
   </div>`;
@@ -8071,8 +8071,8 @@ async function downloadStaffProfile(id) {
   if (!s) { showToast("Staff not found"); return; }
 
   const btn = document.querySelector(`[onclick="downloadStaffProfile('${id}')"]`);
-  if (btn) { btn.textContent = "⏳ Generating…"; btn.disabled = true; }
-  showToast("⏳ Building Word document…");
+  if (btn) { btn.textContent = "Generating…"; btn.disabled = true; }
+  showToast("Building Word document…");
 
   if (!window.docx) {
     await new Promise((resolve, reject) => {
