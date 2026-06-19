@@ -359,6 +359,14 @@ body.light .topbar { background: rgba(240,243,250,.9); }
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
 
 /* ═══════════════════════════════════════════
    STAT CARDS
@@ -1104,6 +1112,8 @@ body.light .topbar { background: rgba(240,243,250,.9); }
 <div id="add-staff-modal-root"></div>
 <!-- HEALTH PANEL -->
 <div class="panel" id="panel-health"></div>
+<!-- LOGIN ACTIVITY PANEL -->
+<div class="panel" id="panel-logins"></div>
     </div>
   </div>
 </div>
@@ -1396,6 +1406,67 @@ exams: {
 ══════════════════════════════════════════ */
 let currentUser       = null;
 let currentTab        = "overview";
+let currentSessionId  = null;
+
+/* ── Login Session Tracking ── */
+const LOGIN_SESSIONS_KEY = "bb_login_sessions";
+function getLoginSessions() {
+  try {
+    const raw = localStorage.getItem(LOGIN_SESSIONS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+function saveLoginSessions(sessions) {
+  try {
+    if (sessions.length > 500) sessions = sessions.slice(-500);
+    localStorage.setItem(LOGIN_SESSIONS_KEY, JSON.stringify(sessions));
+  } catch(e) {}
+}
+function recordLogin(user) {
+  const sessions = getLoginSessions();
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+  sessions.push({
+    id,
+    username: user.username,
+    name: user.name,
+    role: user.role,
+    loginTs: Date.now(),
+    logoutTs: null,
+    lastSeenTs: Date.now()
+  });
+  saveLoginSessions(sessions);
+  currentSessionId = id;
+  try { localStorage.setItem("bb_current_session_id", id); } catch(e) {}
+}
+function recordLogout() {
+  if (!currentSessionId) return;
+  const sessions = getLoginSessions();
+  const idx = sessions.findIndex(s => s.id === currentSessionId);
+  if (idx !== -1) {
+    sessions[idx].logoutTs = Date.now();
+    saveLoginSessions(sessions);
+  }
+  currentSessionId = null;
+  try { localStorage.removeItem("bb_current_session_id"); } catch(e) {}
+}
+function touchSession() {
+  if (!currentSessionId) return;
+  const sessions = getLoginSessions();
+  const idx = sessions.findIndex(s => s.id === currentSessionId);
+  if (idx !== -1 && !sessions[idx].logoutTs) {
+    sessions[idx].lastSeenTs = Date.now();
+    saveLoginSessions(sessions);
+  }
+}
+function fmtDuration(ms) {
+  if (ms < 0) ms = 0;
+  const mins = Math.floor(ms / 60000);
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m`;
+  return "< 1m";
+}
 let liveData          = JSON.parse(JSON.stringify(SAMPLE_DATA));
 let journalData       = null;
 let allBranchJournals = {};
@@ -1454,6 +1525,7 @@ const NAV_ICONS = {
   finance:     `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg>`,
 staff: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
 health: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`,
+logins: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>`,
 };
 
 const TAB_CONFIG = [
@@ -1465,7 +1537,8 @@ const TAB_CONFIG = [
   { id:"debt",        label:"Debt Office",         dept:"debt",        restricted:false, staffOnly:false },
   { id:"finance",     label:"Finance Summary",     dept:"all",         restricted:true,  staffOnly:false },
   { id:"staff",       label:"Staff",               dept:"all",         restricted:false, staffOnly:true  },
-  { id:"health",      label:"Health Data",         dept:"all",         restricted:false, staffOnly:false, healthOnly:true }
+{ id:"health",      label:"Health Data",         dept:"all",         restricted:false, staffOnly:false, healthOnly:true },
+  { id:"logins",      label:"Login Activity",      dept:"all",         restricted:false, staffOnly:false, loginsOnly:true }
 ];
 /* ══════════════════════════════════════════
    BOOT
@@ -1486,11 +1559,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const savedSession  = localStorage.getItem("bb_session_user");
   const savedSessionTs = localStorage.getItem("bb_session_ts");
 
-  if (savedSession && savedSessionTs) {
+if (savedSession && savedSessionTs) {
     const ageHours = (Date.now() - parseInt(savedSessionTs)) / 3600000;
     if (ageHours < SESSION_TIMEOUT_HOURS) {
       try {
         currentUser = JSON.parse(savedSession);
+        currentSessionId = localStorage.getItem("bb_current_session_id") || null;
         document.getElementById("login-screen").style.display = "none";
         showApp();
         return;
@@ -1542,10 +1616,14 @@ function doLogin() {
   
   localStorage.setItem("bb_session_user", JSON.stringify(user));
   localStorage.setItem("bb_session_ts",   Date.now().toString());
+  recordLogin(user);
   showApp();
 }
+
+
 function doLogout() {
   clearInterval(refreshTimer); refreshTimer = null;
+  recordLogout();
   localStorage.removeItem("bb_session_user");   
   localStorage.removeItem("bb_session_ts");    
   clearCache();
@@ -1591,10 +1669,10 @@ function showApp() {
   startRefresh();
 }
 
-
 function canSeeTab(tab) {
   const p = PERMISSIONS[currentUser.role];
   if (tab.healthOnly) return ["superadmin","general_manager","managing_director","chief_director"].includes(currentUser.role);
+  if (tab.loginsOnly) return ["superadmin","general_manager","managing_director","chief_director"].includes(currentUser.role);
   if (tab.staffOnly) return p.seesStaff;
   if (tab.restricted) return p.seesFinance;
   if (tab.dept === "all") return true;
@@ -2094,10 +2172,7 @@ salesViewSaved:   salesView   || "general",
     renderExamRows();
 
  } else if (currentTab === "sales") {
-    // Sales: only silently update data cache, never re-render UI on background refresh
-    // The tab preserves its own state (salesView, salesRep, filters)
-    // KPIs update automatically when rep sheets finish loading
-    // Do nothing here — user interaction drives rendering
+    
 
   } else if (currentTab === "debt") {
     set("debt-rep",    saved.debtRep);
@@ -2141,6 +2216,8 @@ salesViewSaved:   salesView   || "general",
 function startRefresh() {
   if (refreshTimer) clearInterval(refreshTimer);
   refreshTimer = setInterval(loadAllData, CONFIG.REFRESH_INTERVAL);
+  touchSession();
+  setInterval(touchSession, 30000);
 }
 
 /* ══════════════════════════════════════════
@@ -2162,8 +2239,9 @@ function renderTab(id) {
     case "sales":       renderSales(panel); break;
     case "debt":        renderDebt(panel); break;
     case "finance":     renderFinance(panel); break;
-    case "staff":       renderStaff(panel); break;
+  case "staff":       renderStaff(panel); break;
     case "health":      renderHealth(panel); break;
+    case "logins":      renderLogins(panel); break;
   }
 }
 
@@ -3137,7 +3215,7 @@ function renderProdRows() {
     return;
   }
 
-  // For all other sheet types: standard table
+
   const filtered = d.rows.filter(r => !q || r.join(" ").toLowerCase().includes(q));
   if (cnt) cnt.textContent = filtered.length + " entries";
   if (!filtered.length) {
@@ -3145,7 +3223,6 @@ function renderProdRows() {
     return;
   }
 
- // For charts sheet type: render clean marketer summary table from parsed meta
   if (prodSheetType === "charts") {
     const marketers = d?.meta?.marketers || [];
     if (!marketers.length) {
@@ -4369,7 +4446,7 @@ function renderSalesBranchTable(repRows, data) {
       <th style="text-align:right">TOTAL</th>
     </tr></thead>
     <tbody><tr class="empty-row"><td colspan="${4 + SALES_GRADE_LABELS.length}">
-      ${data ? "No data found." : "Loading… (check proxy URL in CONFIG.SALES_PROXY)"}
+      ${data ? "No data found." : "Loading… "}
     </td></tr></tbody></table></div>`;
     return;
   }
@@ -4765,7 +4842,7 @@ function renderSalesKPIs(data) {
 
   if (!data) {
     topDiv.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--text2);background:var(--bg1);border:1px solid var(--border);border-radius:var(--r-lg)">
-      No data yet — Loading.....  </strong> Almost Here
+      Just a moment  </strong>Be patient 
     </div>`;
     botDiv.innerHTML = "";
   }
@@ -5845,6 +5922,134 @@ function healthCondColor(cond) {
   return "#7a8aaa";
 }
 
+
+/* ══════════════════════════════════════════
+   LOGIN ACTIVITY MODULE
+══════════════════════════════════════════ */
+let loginsFilterRole   = "";
+let loginsFilterStatus = "";
+let loginsSearchQ      = "";
+
+function renderLogins(panel) {
+  touchSession();
+  const sessions = getLoginSessions().slice().sort((a,b) => b.loginTs - a.loginTs);
+
+  const roles = [...new Set(sessions.map(s => s.role))].filter(Boolean).sort();
+  const totalSessions = sessions.length;
+  const activeNow = sessions.filter(s => !s.logoutTs).length;
+  const uniqueUsers = new Set(sessions.map(s => s.username)).size;
+  const avgDurationMs = (() => {
+    const ended = sessions.filter(s => s.logoutTs);
+    if (!ended.length) return 0;
+    return ended.reduce((sum, s) => sum + (s.logoutTs - s.loginTs), 0) / ended.length;
+  })();
+
+  panel.innerHTML = `
+    <div class="mini-strip" style="margin-bottom:20px">
+      <div class="mk blue"><div class="mk-val">${totalSessions}</div><div class="mk-lbl">Total Logins</div></div>
+      <div class="mk green"><div class="mk-val">${activeNow}</div><div class="mk-lbl">Active Now</div></div>
+      <div class="mk purple"><div class="mk-val">${uniqueUsers}</div><div class="mk-lbl">Unique Users</div></div>
+      <div class="mk teal"><div class="mk-val">${fmtDuration(avgDurationMs)}</div><div class="mk-lbl">Avg. Session</div></div>
+    </div>
+
+    <div class="sh">
+      <div class="sh-left">
+        <div class="sh-title">Login Sessions</div>
+        <span class="sh-count" id="logins-count">${sessions.length} entries</span>
+      </div>
+      <div class="sh-right">
+        <select class="filter-select" id="logins-role" onchange="filterLogins()">
+          <option value="">All Roles</option>
+          ${roles.map(r => `<option value="${r}">${r.replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase())}</option>`).join("")}
+        </select>
+        <select class="filter-select" id="logins-status" onchange="filterLogins()">
+          <option value="">All Status</option>
+          <option value="active">Active Now</option>
+          <option value="ended">Ended</option>
+        </select>
+        <div class="search-wrap"><span class="s-icon">⌕</span>
+          <input class="search-input" id="logins-search" placeholder="Search name or username…" oninput="filterLogins()">
+        </div>
+      </div>
+    </div>
+    <div id="logins-table-wrap"></div>`;
+
+  renderLoginsRows();
+}
+
+function renderLoginsRows() {
+  const role   = document.getElementById("logins-role")?.value   || "";
+  const status = document.getElementById("logins-status")?.value || "";
+  const q      = (document.getElementById("logins-search")?.value || "").toLowerCase();
+
+  const sessions = getLoginSessions().slice().sort((a,b) => b.loginTs - a.loginTs);
+
+  const filtered = sessions.filter(s => {
+    if (role && s.role !== role) return false;
+    if (status === "active" && s.logoutTs) return false;
+    if (status === "ended"  && !s.logoutTs) return false;
+    if (q && !((s.name||"")+" "+(s.username||"")).toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  const cnt = document.getElementById("logins-count");
+  if (cnt) cnt.textContent = filtered.length + " entries";
+
+  const wrap = document.getElementById("logins-table-wrap");
+  if (!wrap) return;
+
+  if (!filtered.length) {
+    wrap.innerHTML = `<div class="table-wrap"><table>
+      <thead><tr><th>User</th><th>Role</th><th>Login Time</th><th>Logout Time</th><th>Duration</th><th>Status</th></tr></thead>
+      <tbody><tr class="empty-row"><td colspan="6">No login activity recorded yet.</td></tr></tbody>
+    </table></div>`;
+    return;
+  }
+
+  const fmtDate = (ms) => new Date(ms).toLocaleString("en-GB", {
+    day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit"
+  });
+
+  wrap.innerHTML = `<div class="table-wrap scroll" style="border-radius:var(--r-lg)">
+    <table>
+      <thead><tr>
+        <th>User</th><th>Role</th><th>Login Time</th><th>Logout Time</th>
+        <th>Duration</th><th style="text-align:center">Status</th>
+      </tr></thead>
+      <tbody>
+        ${filtered.map(s => {
+          const isActive = !s.logoutTs;
+          const durationMs = isActive
+            ? ((s.lastSeenTs || Date.now()) - s.loginTs)
+            : (s.logoutTs - s.loginTs);
+          const initials = (s.name||"?").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+          return `<tr>
+            <td style="padding:10px 16px">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="staff-avatar-sm">${initials}</div>
+                <div>
+                  <div style="font-weight:600;font-size:13px">${s.name||"—"}</div>
+                  <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono)">@${s.username||"—"}</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="badge badge-blue" style="font-size:10px">${(s.role||"—").replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase())}</span></td>
+            <td style="font-size:12px;font-family:var(--font-mono);color:var(--text2);white-space:nowrap">${fmtDate(s.loginTs)}</td>
+            <td style="font-size:12px;font-family:var(--font-mono);color:var(--text2);white-space:nowrap">${s.logoutTs ? fmtDate(s.logoutTs) : "—"}</td>
+            <td style="font-size:12px;font-family:var(--font-mono);font-weight:600;color:${isActive?"var(--green)":"var(--text2)"}">${fmtDuration(durationMs)}${isActive?" (ongoing)":""}</td>
+            <td style="text-align:center">
+              ${isActive
+                ? `<span class="badge badge-green" style="font-size:10px"><span style="width:5px;height:5px;border-radius:50%;background:var(--green);display:inline-block;animation:blink 1.4s ease-in-out infinite;margin-right:4px"></span>Active</span>`
+                : `<span class="badge badge-amber" style="font-size:10px">Ended</span>`}
+            </td>
+          </tr>`;
+        }).join("")}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+function filterLogins() { renderLoginsRows(); }
 /* ══════════════════════════════════════════
    STAFF MODULE
 ══════════════════════════════════════════ */
@@ -5878,6 +6083,40 @@ let staffFilterDept  = "";
 let staffFilterBranch= "";
 let staffSearchQ     = "";
 let staffLoading     = false;
+
+/* ── Activity Log (add / edit / download), with read/unread state ── */
+let staffActivityLog = [];
+function loadStaffActivityLog() {
+  try {
+    const raw = localStorage.getItem("bb_staff_activity_log");
+    staffActivityLog = raw ? JSON.parse(raw) : [];
+  } catch(e) { staffActivityLog = []; }
+}
+function saveStaffActivityLog() {
+  try { localStorage.setItem("bb_staff_activity_log", JSON.stringify(staffActivityLog)); } catch(e) {}
+}
+function logStaffActivity(type, staffId, staffName, dept, position) {
+  loadStaffActivityLog();
+  staffActivityLog.unshift({
+    type,                  // "add" | "edit" | "download"
+    staffId, staffName, dept, position,
+    actor: currentUser?.name || "Unknown",
+    actorRole: currentUser?.role || "",
+    ts: Date.now(),
+    read: false
+  });
+  if (staffActivityLog.length > 300) staffActivityLog = staffActivityLog.slice(0, 300);
+  saveStaffActivityLog();
+  updateStaffActivityBadge();
+}
+function unreadActivityCount() {
+  loadStaffActivityLog();
+  return staffActivityLog.filter(e => !e.read).length;
+}
+function updateStaffActivityBadge() {
+  const el = document.getElementById("staff-activity-badge");
+  if (el) el.textContent = unreadActivityCount();
+}
 // Health module state
 let healthBranch     = "greater";   // active branch
 let healthData       = null;         
@@ -6024,9 +6263,135 @@ function fillRatePill(rate) {
 ══════════════════════════════════════════ */
 async function renderStaff(panel) {
   panel.innerHTML = `<div class="loading-wrap"><div class="spinner"></div></div>`;
+  loadStaffActivityLog();
   await loadStaffFromFirestore();
   buildStaffPanel(panel);
 }
+
+/* ══════════════════════════════════════════
+   STAFF — RECENT ACTIVITY LOG
+══════════════════════════════════════════ */
+/* ══════════════════════════════════════════
+   STAFF — RECENT ACTIVITY SLIDE PANEL
+══════════════════════════════════════════ */
+const ACTIVITY_TYPE_META = {
+  add:      { label: "✚ Added",      color: "var(--green)",  bg: "rgba(0,229,160,.10)",  border: "rgba(0,229,160,.25)"  },
+  edit:     { label: "✏ Edited",     color: "var(--purple)", bg: "rgba(167,139,250,.12)", border: "rgba(167,139,250,.25)" },
+  download: { label: "⬇ Downloaded", color: "var(--blue)",   bg: "rgba(61,156,245,.10)",  border: "rgba(61,156,245,.25)"  }
+};
+
+function openRecentActivityPanel() {
+  const existing = document.getElementById("staff-activity-panel");
+  if (existing) { closeRecentActivityPanel(); return; }
+
+  loadStaffActivityLog();
+
+  const fmtTs = (ms) => {
+    const now  = Date.now();
+    const diff = Math.floor((now - ms) / 1000);
+    if (diff < 60)    return "Just now";
+    if (diff < 3600)  return Math.floor(diff / 60) + "m ago";
+    if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
+    return new Date(ms).toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric",
+      hour:"2-digit", minute:"2-digit" });
+  };
+  const fmtFull = (ms) => new Date(ms).toLocaleDateString("en-GB", { weekday:"short", day:"2-digit",
+    month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" });
+
+  const entries = staffActivityLog.slice(0, 30);
+
+  const rows = entries.length ? entries.map((e, i) => {
+    const meta     = ACTIVITY_TYPE_META[e.type] || ACTIVITY_TYPE_META.add;
+    const staff    = staffList.find(s => s.id === e.staffId);
+    const deptCol  = DEPT_COLORS[e.dept] || "#3d9cf5";
+    const initials = (e.staffName||"?").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+    return `<div style="display:flex;align-items:flex-start;gap:12px;padding:14px 20px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;
+        background:${e.read ? "transparent" : "rgba(61,156,245,.04)"}"
+      onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background='${e.read ? "transparent" : "rgba(61,156,245,.04)"}'"
+      onclick="closeRecentActivityPanel();${staff ? `openStaffProfile('${e.staffId}')` : ""}">
+      ${!e.read ? `<span style="width:7px;height:7px;border-radius:50%;background:var(--blue);flex-shrink:0;margin-top:8px"></span>` : `<span style="width:7px;flex-shrink:0"></span>`}
+      <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,${deptCol}cc,${deptCol}55);
+        display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden;margin-top:2px">
+        ${staff?.passportPhotoUrl ? `<img src="${staff.passportPhotoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : initials}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.staffName||"—"}</div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.position||"—"} · ${e.dept||"—"}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center">
+          <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;
+            background:${meta.bg};color:${meta.color};border:1px solid ${meta.border}">
+            ${meta.label}
+          </span>
+          <span style="font-size:10px;font-family:var(--font-mono);color:var(--text3)">${fmtTs(e.ts)}</span>
+        </div>
+        <div style="margin-top:5px;font-size:11px;color:var(--text2)">
+          <span style="color:var(--text3)">by</span> <strong>${e.actor||"—"}</strong>
+          ${e.actorRole ? `<span style="color:var(--text3);margin-left:4px">· ${e.actorRole.replace(/_/g," ")}</span>` : ""}
+        </div>
+        <div style="margin-top:2px;font-size:10px;color:var(--text3);font-family:var(--font-mono)">${fmtFull(e.ts)}</div>
+      </div>
+    </div>`;
+  }).join("") : `<div style="text-align:center;padding:48px 24px;color:var(--text2)">
+    <div style="font-size:32px;margin-bottom:10px">📭</div>
+    <div style="font-size:13px">No activity recorded yet.</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:6px">Staff additions, edits & downloads will appear here.</div>
+  </div>`;
+
+  const panel = document.createElement("div");
+  panel.id    = "staff-activity-panel";
+  panel.innerHTML = `
+    <div onclick="closeRecentActivityPanel()"
+      style="position:fixed;inset:0;z-index:590;background:rgba(0,0,0,.45);backdrop-filter:blur(3px);
+        animation:fadeIn .22s ease"></div>
+    <div style="position:fixed;top:0;right:0;bottom:0;z-index:600;width:400px;max-width:95vw;
+      background:var(--bg1);border-left:1px solid var(--border);
+      display:flex;flex-direction:column;
+      box-shadow:-8px 0 40px rgba(0,0,0,.3);
+      animation:slideInRight .28s cubic-bezier(.16,1,.3,1)">
+      <div style="padding:20px 20px 16px;border-bottom:1px solid var(--border);flex-shrink:0;
+        background:linear-gradient(135deg,rgba(61,156,245,.06),rgba(167,139,250,.04))">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <div style="font-family:var(--font-display);font-size:16px;font-weight:800">Recent Activity</div>
+          <button onclick="closeRecentActivityPanel()"
+            style="width:30px;height:30px;border-radius:50%;background:var(--bg2);border:1px solid var(--border);
+              cursor:pointer;font-size:15px;color:var(--text2);display:flex;align-items:center;justify-content:center">✕</button>
+        </div>
+        <div style="font-size:11px;color:var(--text2)">Last ${entries.length} actions · added, edited &amp; downloaded · click a row to view profile</div>
+        <div style="margin-top:10px;display:flex;gap:8px">
+          <div style="flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-md);
+            padding:8px 10px;text-align:center">
+            <div style="font-size:17px;font-weight:800;color:var(--green)">${entries.filter(e=>e.type==="add").length}</div>
+            <div style="font-size:10px;color:var(--text3)">Added</div>
+          </div>
+          <div style="flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-md);
+            padding:8px 10px;text-align:center">
+            <div style="font-size:17px;font-weight:800;color:var(--purple)">${entries.filter(e=>e.type==="edit").length}</div>
+            <div style="font-size:10px;color:var(--text3)">Edited</div>
+          </div>
+          <div style="flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-md);
+            padding:8px 10px;text-align:center">
+            <div style="font-size:17px;font-weight:800;color:var(--blue)">${entries.filter(e=>e.type==="download").length}</div>
+            <div style="font-size:10px;color:var(--text3)">Downloaded</div>
+          </div>
+        </div>
+      </div>
+      <div style="flex:1;overflow-y:auto">${rows}</div>
+    </div>`;
+
+  document.body.appendChild(panel);
+
+  // Mark everything as read once opened
+  staffActivityLog.forEach(e => e.read = true);
+  saveStaffActivityLog();
+  updateStaffActivityBadge();
+}
+
+function closeRecentActivityPanel() {
+  const p = document.getElementById("staff-activity-panel");
+  if (p) p.remove();
+}
+
+function renderStaffRecentActivity() {}
 
 function buildStaffPanel(panel) {
   // Dept summary
@@ -6113,8 +6478,20 @@ function buildStaffPanel(panel) {
       </div>
     </div>
 
-    <!-- Department cards -->
-    <div style="margin-bottom:6px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em">Departments — click to filter</div>
+  <!-- Recent Activity button + Department label row -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+      <span style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em">Departments — click to filter</span>
+      <button onclick="openRecentActivityPanel()"
+        style="display:inline-flex;align-items:center;gap:7px;padding:7px 16px;border-radius:var(--r-md);
+          background:rgba(61,156,245,.1);color:var(--blue);border:1px solid rgba(61,156,245,.25);
+          font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-display);transition:all .18s"
+        onmouseover="this.style.background='rgba(61,156,245,.2)'"
+        onmouseout="this.style.background='rgba(61,156,245,.1)'">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Recent Activity
+        <span id="staff-activity-badge" style="background:var(--blue);color:#fff;font-size:10px;padding:1px 6px;border-radius:20px;font-family:var(--font-mono)">${unreadActivityCount()}</span>
+      </button>
+    </div>
     <div class="dept-grid" id="dept-card-grid">${deptCards}</div>
 
     <!-- Filters -->
@@ -6144,9 +6521,8 @@ function buildStaffPanel(panel) {
     <div id="staff-table-area"></div>
     <div id="staff-pg-bar"></div>`;
 
-  renderStaffTable();
+renderStaffTable();
 }
-
 function renderStaffTable() {
   // Filter
   let filtered = staffList.filter(s => {
@@ -6475,9 +6851,16 @@ function openStaffProfile(id) {
 
         <!-- Edit button -->
         <div style="text-align:center;margin-top:12px">
-          <button class="btn-add-staff" onclick="closeProfileModal();openEditStaff('${s.id}')">
-             Edit Profile
-          </button>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+            <button class="btn-add-staff" onclick="closeProfileModal();openEditStaff('${s.id}')">
+               Edit Profile
+            </button>
+            <button onclick="downloadStaffProfile('${s.id}')"
+              style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:var(--r-md);background:rgba(0,229,160,.12);color:var(--green);border:1px solid rgba(0,229,160,.3);font-family:var(--font-display);font-weight:600;font-size:13px;cursor:pointer;transition:all .2s"
+              onmouseover="this.style.background='rgba(0,229,160,.22)'" onmouseout="this.style.background='rgba(0,229,160,.12)'">
+               Download Profile
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -6598,7 +6981,7 @@ function buildAllSectionsHTML(d) {
     <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="form-group">
         <label class="form-label">Full Name <span class="req">*</span></label>
-        <input class="form-input" id="sf-fullname" placeholder="e.g. Nicholas Adebayor" value="${d.fullName||""}" oninput="saveDraft()">
+      <input class="form-input" id="sf-fullname" placeholder="e.g. Nicholas Adebayor" value="${d.fullName||""}" oninput="saveDraft();checkDuplicateName(this.value)">
       </div>
       <div class="form-group">
         <label class="form-label">Gender <span class="req">*</span></label>
@@ -7452,11 +7835,72 @@ function removeDoc(idx) {
   </div>`).join("");
 }
 
+function checkDuplicateName(val) {
+  const currentEditId = addStaffDraft._editId || null;
+  const name          = (val || "").trim().toLowerCase();
+  const nameField     = document.getElementById("sf-fullname");
+  const submitBtn     = document.querySelector('#add-staff-modal-root button[onclick="submitStaffForm()"]');
+
+  // Clear previous state when field is short/empty
+  if (!name || name.length < 2) {
+    if (nameField) { nameField.style.borderColor = ""; nameField.style.boxShadow = ""; }
+    const tip = document.getElementById("sf-fullname-dup-tip");
+    if (tip) tip.remove();
+    if (submitBtn) submitBtn.disabled = false;
+    return;
+  }
+
+  const dup = staffList.find(s =>
+    s.id !== currentEditId &&
+    (s.fullName || "").trim().toLowerCase() === name
+  );
+
+  if (!nameField) return;
+
+  if (dup) {
+    // Red border on field
+    nameField.style.borderColor = "var(--red)";
+    nameField.style.boxShadow   = "0 0 0 3px rgba(255,77,109,.15)";
+
+    // Tip below field
+    let tip = document.getElementById("sf-fullname-dup-tip");
+    if (!tip) {
+      tip            = document.createElement("div");
+      tip.id         = "sf-fullname-dup-tip";
+      tip.style.cssText = "font-size:11px;color:var(--red);margin-top:5px;font-weight:600;padding:6px 10px;background:rgba(255,77,109,.07);border:1px solid rgba(255,77,109,.2);border-radius:6px";
+      nameField.parentNode.appendChild(tip);
+    }
+    tip.innerHTML = ` <strong>${dup.fullName}</strong> already exists. Rename or edit the existing record.`;
+
+    // Disable submit button
+    if (submitBtn) {
+      submitBtn.disabled        = true;
+      submitBtn.style.opacity   = "0.45";
+      submitBtn.style.cursor    = "not-allowed";
+      submitBtn.title           = "Duplicate name — cannot submit";
+    }
+  } else {
+    // Clear everything
+    nameField.style.borderColor = "";
+    nameField.style.boxShadow   = "";
+    const tip = document.getElementById("sf-fullname-dup-tip");
+    if (tip) tip.remove();
+
+    if (submitBtn) {
+      submitBtn.disabled      = false;
+      submitBtn.style.opacity = "";
+      submitBtn.style.cursor  = "";
+      submitBtn.title         = "";
+    }
+  }
+}
+
 /* ── SUBMIT ── */
 async function submitStaffForm() {
   // Step 1: collect all fields
   saveDraft();
   const rate = calcFillRate(addStaffDraft);
+
 
   if (rate < 80) {
     showToast("⚠️ Fill rate is " + rate + "%. Must be ≥ 80% to submit.");
@@ -7544,29 +7988,37 @@ async function submitStaffForm() {
       finalPhotoUrl = await compressToThumbnail(finalPhotoUrl, 200, 0.7);
     }
 
+const editId = addStaffDraft._editId || null;
+
     const staffData = {
       ...cleanData,
       passportPhotoUrl: finalPhotoUrl || null,
       documentUrls:     docUrls,
       fillRate:         rate,
       status:           cleanData.status || "Active",
-      _storageReady:    !!(passportUrl && !passportUrl.startsWith("data:")) // flag for later migration
+      _storageReady:    !!(passportUrl && !passportUrl.startsWith("data:")),
+      submittedBy:   editId ? (cleanData.submittedBy || currentUser?.name || "Unknown") : (currentUser?.name || "Unknown"),
+      submittedRole: editId ? (cleanData.submittedRole || currentUser?.role || "") : (currentUser?.role || ""),
+      lastEditedBy:  editId ? (currentUser?.name  || "Unknown") : null,
+      lastEditedRole:editId ? (currentUser?.role  || "")        : null,
+      lastEditedAt:  editId ? new Date().toISOString()          : null
     };
 
-    const editId = addStaffDraft._editId || null;
-
-    if (editId && fb) {
+ if (editId && fb) {
       await updateStaffInFirestore(editId, staffData);
       const idx = staffList.findIndex(s => s.id === editId);
       if (idx !== -1) staffList[idx] = { id: editId, ...staffData };
+      logStaffActivity("edit", editId, staffData.fullName, staffData.department, staffData.position);
       showToast("✓ " + (staffData.fullName||"Staff") + " updated successfully");
     } else if (fb) {
       const newId = await saveStaffToFirestore(staffData);
       staffList.unshift({ id: newId, ...staffData });
+      logStaffActivity("add", newId, staffData.fullName, staffData.department, staffData.position);
       showToast("✓ " + (staffData.fullName||"Staff") + " added successfully");
     } else {
       const tempId = "local_" + Date.now();
       staffList.unshift({ id: tempId, ...staffData });
+      logStaffActivity("add", tempId, staffData.fullName, staffData.department, staffData.position);
       showToast("✓ Saved locally (Firebase not connected)");
     }
 
@@ -7607,6 +8059,264 @@ function compressToThumbnail(dataUrl, maxSize, quality) {
 }
 function closeAddStaffModal() {
   document.getElementById("add-staff-modal-root").innerHTML = "";
+}
+
+
+/* ══════════════════════════════════════════
+   STAFF — DOWNLOAD PROFILE AS WORD DOC
+   
+══════════════════════════════════════════ */
+async function downloadStaffProfile(id) {
+  const s = staffList.find(x => x.id === id);
+  if (!s) { showToast("Staff not found"); return; }
+
+  const btn = document.querySelector(`[onclick="downloadStaffProfile('${id}')"]`);
+  if (btn) { btn.textContent = "⏳ Generating…"; btn.disabled = true; }
+  showToast("⏳ Building Word document…");
+
+  if (!window.docx) {
+    await new Promise((resolve, reject) => {
+      const script   = document.createElement("script");
+      script.src     = "https://unpkg.com/docx@8.5.0/build/index.umd.js";
+      script.onload  = resolve;
+      script.onerror = () => {
+        const s2   = document.createElement("script");
+        s2.src     = "https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js";
+        s2.onload  = resolve;
+        s2.onerror = reject;
+        document.head.appendChild(s2);
+      };
+      document.head.appendChild(script);
+    });
+  }
+
+  if (!window.docx) {
+    showToast("❌ Could not load document library. Check internet connection.");
+    if (btn) { btn.textContent = "📄 Download Profile"; btn.disabled = false; }
+    return;
+  }
+
+  const {
+    Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
+    AlignmentType, BorderStyle, WidthType, ShadingType,
+    VerticalAlign, ImageRun
+  } = window.docx;
+
+  const rate    = calcFillRate(s);
+  const noBorder = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
+  const noBorders = { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder };
+  const underline = { style: BorderStyle.SINGLE, size: 4, color: "999999" };
+
+  // ── Convert passport photo (base64 or URL) into a buffer docx can embed ──
+  async function getImageBuffer(src) {
+    if (!src) return null;
+    try {
+      if (src.startsWith("data:")) {
+        const base64 = src.split(",")[1];
+        const bin = atob(base64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        return bytes;
+      }
+      const res = await fetch(src);
+      const buf = await res.arrayBuffer();
+      return new Uint8Array(buf);
+    } catch (e) {
+      console.warn("Could not load passport image:", e);
+      return null;
+    }
+  }
+  const photoBuf = await getImageBuffer(s.passportPhotoUrl);
+
+  // ── Dark gray "label bar" like the form's section headers ──
+  const sectionBar = (txt) => new Paragraph({
+    shading: { fill: "595959", type: ShadingType.CLEAR },
+    spacing: { before: 280, after: 160 },
+    children: [new TextRun({ text: txt, bold: true, size: 20, color: "FFFFFF", font: "Calibri" })]
+  });
+
+  // ── A single "Label: ____value____" line, underlined, two per row ──
+  function underlinedField(label, value) {
+    return new TableCell({
+      borders: noBorders,
+      margins: { top: 60, bottom: 180, left: 0, right: 200 },
+      children: [new Paragraph({
+        children: [
+          new TextRun({ text: label + ":  ", size: 20, font: "Calibri", color: "333333" }),
+          new TextRun({ text: (value || "").toString() || " ", size: 20, font: "Calibri", color: "111111" })
+        ],
+        border: { bottom: underline },
+        spacing: { after: 0 }
+      })]
+    });
+  }
+
+  // ── Two-column field grid, like the reference form ──
+  function fieldGrid(pairs) {
+    return new Table({
+      width: { size: 9060, type: WidthType.DXA },
+      columnWidths: [4530, 4530],
+      rows: pairs.map(([l1, v1, l2, v2]) => new TableRow({
+        children: [
+          underlinedField(l1, v1),
+          l2 !== undefined ? underlinedField(l2, v2) : new TableCell({ borders: noBorders, children: [new Paragraph("")] })
+        ]
+      }))
+    });
+  }
+
+const now = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" });
+
+  // ── Calculate age in years from Date of Birth ──
+  function calcAge(dobStr) {
+    if (!dobStr) return "";
+    const dob = new Date(dobStr);
+    if (isNaN(dob.getTime())) return "";
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const monthDiff = today.getMonth() - dob.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age--;
+    return age >= 0 ? String(age) + " years" : "";
+  }
+
+  // ── Title bar like "EMPLOYEE INFORMATION FORM" ──
+  const titleBar = new Paragraph({
+    shading: { fill: "404040", type: ShadingType.CLEAR },
+    alignment: AlignmentType.CENTER,
+    spacing: { before: 0, after: 240 },
+    children: [new TextRun({ text: "EMPLOYEE INFORMATION FORM", bold: true, size: 32, color: "FFFFFF", font: "Calibri" })]
+  });
+
+  // ── Header row: company name (left) + square passport photo (right) ──
+  const headerRow = new Table({
+    width: { size: 9060, type: WidthType.DXA },
+    columnWidths: [6760, 2300],
+    rows: [new TableRow({
+      children: [
+        new TableCell({
+          borders: noBorders,
+          verticalAlign: VerticalAlign.CENTER,
+          children: [
+            new Paragraph({ children: [new TextRun({ text: "BEST BRAIN EXAMINATIONS KONSORTIUM LTD", bold: true, size: 24, color: "2E6DA4", font: "Calibri" })] }),
+            new Paragraph({ children: [new TextRun({ text: "Staff Profile · Generated " + now, size: 18, color: "888888", font: "Calibri" })], spacing: { before: 60 } })
+          ]
+        }),
+        new TableCell({
+          borders: noBorders,
+          verticalAlign: VerticalAlign.CENTER,
+          children: [
+            new Paragraph({
+              alignment: AlignmentType.RIGHT,
+              children: photoBuf
+                ? [new ImageRun({ data: photoBuf, transformation: { width: 110, height: 110 } })]
+                // Square placeholder box if no photo on file
+                : [new TextRun({ text: "" })]
+            })
+          ]
+        })
+      ]
+    })]
+  });
+
+  // ── "Employee Details:" section ──
+  const employeeDetails = [
+    titleBar,
+    headerRow,
+    new Paragraph({ spacing: { before: 200 } }),
+    sectionBar("Employee Details:"),
+    fieldGrid([
+      ["Surname", (s.fullName||"").split(" ").slice(-1).join(" "), "Full Name", (s.fullName||"").split(" ").slice(0,-1).join(" ")],
+      ["Date of Birth", s.dob, "Place of Birth", s.homeTown],
+    ["Age", calcAge(s.dob), "Sex", s.gender],
+      ["Nationality", s.nationality, "Marital Status", s.maritalStatus],
+      ["Mobile", s.mobile, "Personal Email", s.personalEmail],
+      ["Residential Address", s.residentialAddress, "GPS Address", s.gpsAddress],
+      ["Ghana Card", s.ghanaCard, "SSNIT Number", s.ssnit],
+      ["NHIS Number", s.nhis, "Emergency Contact", s.emergencyContact],
+    ])
+  ];
+
+  // ── "Designation:" section ──
+  const designation = [
+    sectionBar("Designation:"),
+    fieldGrid([
+      ["Date of Appointment", s.employmentDate, "Date of Confirmation", s.confirmationDate],
+      ["Department", s.department, "Branch", s.branch],
+      ["Position", s.position, "Employment Status", s.employmentStatus],
+      ["Reporting Officer", s.reportingOfficer, "Current Salary", s.salary ? "GHS " + parseFloat(s.salary).toLocaleString("en-GH",{minimumFractionDigits:2}) : ""],
+      ["Bank Name", s.bankName, "Account Number", s.bankAccount],
+      ["Bank Branch", s.bankBranch, "Date of Exit", s.dateOfExit],
+      ["Highest Qualification", s.highestQualification, "Institution Attended", s.institutionAttended],
+      ["Programme Studied", s.programStudied, "Year Completed", s.yearCompleted ? String(s.yearCompleted) : ""],
+    ])
+  ];
+
+  // ── Medical 
+  const medicalLine = (label, value) => new Paragraph({
+    children: [
+      new TextRun({ text: label + ":  ", size: 20, font: "Calibri", color: "333333" }),
+      new TextRun({ text: (value || " "), size: 20, font: "Calibri", color: "111111" })
+    ],
+    border: { bottom: underline },
+    spacing: { before: 140, after: 0 }
+  });
+
+  const medicalSection = [
+    sectionBar("Medical & Remarks:"),
+    medicalLine("Blood Group", s.bloodGroup),
+    medicalLine("Medical Conditions", s.medicalConditions),
+    medicalLine("Allergies", s.allergies),
+    medicalLine("Emergency Medical Notes", s.emergencyMedicalNotes),
+    medicalLine("Next of Kin (Name / Relationship)", (s.nokName||"") + (s.nokRelationship ? " — " + s.nokRelationship : "")),
+    medicalLine("Next of Kin Phone", s.nokPhone),
+    medicalLine("Next of Kin Address", s.nokAddress),
+  medicalLine("Remarks", s.status === "Terminated" ? "Terminated" : "Active · Fill rate " + rate + "%"),
+  ];
+
+  // ── Signature line ──
+  const signature = [
+    new Paragraph({ spacing: { before: 500 } }),
+    new Paragraph({
+      children: [new TextRun({ text: "____________________________", size: 20, font: "Calibri" })]
+    }),
+    new Paragraph({
+      children: [new TextRun({ text: "Signature", size: 18, color: "555555", font: "Calibri" })],
+      spacing: { before: 40 }
+    }),
+    new Paragraph({ spacing: { before: 300 } }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      border: { top: { style: BorderStyle.SINGLE, size: 2, color: "DDDDDD", space: 1 } },
+      children: [new TextRun({ text: "CONFIDENTIAL — Best Brain Examinations Konsortium Ltd · Cc: General Manager", size: 16, color: "AAAAAA", italics: true, font: "Calibri" })]
+    })
+  ];
+
+  const doc = new window.docx.Document({
+    sections: [{
+      properties: {
+        page: { size: { width: 12240, height: 15840 }, margin: { top: 900, right: 900, bottom: 900, left: 900 } }
+      },
+      children: [...employeeDetails, ...designation, ...medicalSection, ...signature]
+    }]
+  });
+
+  try {
+    const blob = await window.docx.Packer.toBlob(doc);
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = `${(s.fullName || "staff").replace(/[^a-zA-Z0-9]/g, "_")}_Profile.docx`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+  logStaffActivity("download", s.id, s.fullName, s.department, s.position);
+    showToast("✓ " + (s.fullName || "Staff") + " profile downloaded");
+  } catch(err) {
+    console.error("Download error:", err);
+    showToast(" Download failed: " + (err.message || "unknown error"));
+  } finally {
+    if (btn) { btn.textContent = " Download Profile"; btn.disabled = false; }
+  }
 }
 </script>
 </body>
