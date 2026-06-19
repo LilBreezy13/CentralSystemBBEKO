@@ -1522,6 +1522,40 @@ async function recordLogin(user) {
 }
 
 
+
+async function resumeOrCreateSession(user) {
+  const storedId = localStorage.getItem("bb_current_session_id");
+  if (storedId) {
+    const fb = await staffDb();
+    if (fb) {
+      try {
+        const { db, collection, getDocs, query, where, doc, updateDoc } = fb;
+        const q = query(collection(db, "loginSessions"), where("id", "==", storedId));
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          const data = snap.docs[0].data();
+          if (!data.logoutTs) {
+            // Existing session is still open — reuse it, don't create a new one
+            currentSessionId = storedId;
+            await updateDoc(doc(db, "loginSessions", snap.docs[0].id), { lastSeenTs: Date.now() });
+            if (!window._loginSessionsCache) window._loginSessionsCache = [];
+            const local = window._loginSessionsCache.find(s => s.id === storedId);
+            if (local) local.lastSeenTs = Date.now();
+            else window._loginSessionsCache.unshift({ _docId: snap.docs[0].id, ...data, id: storedId });
+            console.log("Resumed existing session:", storedId);
+            return true;
+          }
+        }
+      } catch(e) {
+        console.warn("resumeOrCreateSession lookup failed, will create new session:", e);
+      }
+    }
+  }
+  // No open session found for this browser — start a fresh one
+  await recordLogin(user);
+  return false;
+}
+
 async function recordLogout() {
   if (!currentSessionId) {
     console.warn("No current session ID to log out");
@@ -1721,17 +1755,13 @@ document.addEventListener("DOMContentLoaded", () => {
 if (savedSession && savedSessionTs) {
     const ageHours = (Date.now() - parseInt(savedSessionTs)) / 3600000;
     if (ageHours < SESSION_TIMEOUT_HOURS) {
-      try {
-        currentUser = JSON.parse(savedSession);
-        // Always record a fresh session to Firestore on every page load
-        // so all devices appear in Login Activity
-        currentSessionId = null; // force a new session ID
-        localStorage.removeItem("bb_current_session_id");
-        document.getElementById("login-screen").style.display = "none";
-        showApp();
-        recordLogin(currentUser); // creates new Firestore doc for this visit
-        return;
-      } catch(e) {
+    try {
+  currentUser = JSON.parse(savedSession);
+  document.getElementById("login-screen").style.display = "none";
+  showApp();
+  resumeOrCreateSession(currentUser); // reuse open session on refresh, or start new one
+  return;
+} catch(e) {
         localStorage.removeItem("bb_session_user");
         localStorage.removeItem("bb_session_ts");
       }
