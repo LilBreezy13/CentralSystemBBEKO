@@ -9,10 +9,12 @@
 <!-- Firebase SDK -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp }
+  import { getFirestore, collection, addDoc, getDocs, getDoc, doc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp }
     from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
   import { getStorage, ref, uploadBytes, getDownloadURL }
     from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+  import { getAuth, signInWithEmailAndPassword, signOut }
+    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAKj1Dd-Ds76ZHyF2GTCSOf4dCCddwFT6s",
@@ -30,7 +32,11 @@
   const storage = getStorage(app);
 
   
-  window.__bbFB = { db, storage, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp, ref, uploadBytes, getDownloadURL };
+ const auth = getAuth(app);
+  window.__bbFB  = { db, storage, auth, collection, addDoc, getDocs, getDoc, doc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp, ref, uploadBytes, getDownloadURL };
+  window.__bbAuth = auth;
+  window.__bbSignIn  = signInWithEmailAndPassword;
+  window.__bbSignOut = signOut;
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -1018,17 +1024,27 @@ body.light .topbar { background: rgba(240,243,250,.9); }
     <div class="login-sub">Sign in to access your department dashboard</div>
     <div id="login-error" class="login-error">Incorrect username or password.</div>
     <div class="field-group">
-      <label class="field-label" for="login-user">Username</label>
+    <label class="field-label" for="login-user">Email Address</label>
       <div class="field-wrap">
         <span class="field-icon"></span>
-        <input class="login-input" id="login-user" type="text" placeholder="Enter username" autocomplete="username">
+        <input class="login-input" id="login-user" type="email" placeholder="Enter email address" autocomplete="email">
       </div>
     </div>
-    <div class="field-group">
+  <div class="field-group">
       <label class="field-label" for="login-pass">Password</label>
       <div class="field-wrap">
         <span class="field-icon"></span>
         <input class="login-input" id="login-pass" type="password" placeholder="Enter password" autocomplete="current-password">
+        <button type="button" id="toggle-pass"
+          onclick="togglePasswordVisibility()"
+          style="position:absolute;right:12px;top:50%;transform:translateY(-50%);
+            background:none;border:none;cursor:pointer;color:var(--text3);
+            font-size:16px;padding:4px;line-height:1;transition:color .15s"
+          onmouseover="this.style.color='var(--text2)'"
+          onmouseout="this.style.color='var(--text3)'"
+          title="Show/hide password">
+          👁
+        </button>
       </div>
     </div>
     <button class="btn-login" onclick="doLogin()">Sign In →</button>
@@ -1114,6 +1130,8 @@ body.light .topbar { background: rgba(240,243,250,.9); }
 <div class="panel" id="panel-health"></div>
 <!-- LOGIN ACTIVITY PANEL -->
 <div class="panel" id="panel-logins"></div>
+<div class="panel" id="panel-complaints"></div>
+
     </div>
   </div>
 </div>
@@ -1288,12 +1306,12 @@ let currentBranch = "greater";
    USERS & PERMISSIONS
 ══════════════════════════════════════════ */
 const USERS = [
-  { username: "admin",       password: "Admin@2024",  name: "Super Admin",        role: "superadmin",        dept: "all" },
-  { username: "chiefdir",    password: "Chief@2024",  name: "Bacon Atsu Amengor",     role: "chief_director",    dept: "all" },
-  { username: "md",          password: "MD@secure1",  name: "Francis Vinyo",  role: "managing_director", dept: "all" },
+  { username: "admin",       password: "Admin@2026",  name: "Super Admin",        role: "superadmin",        dept: "all" },
+  { username: "chiefdir",    password: "Chief@2026",  name: "Bacon Atsu Amengor",     role: "chief_director",    dept: "all" },
+  { username: "md",          password: "MD@secure2026",  name: "Francis Vinyo",  role: "managing_director", dept: "all" },
   { username: "gm",          password: "GM@secure1",  name: "Victoria Governor",  role: "general_manager", dept: "all" },
   { username: "mismanager", password: "MIS@manager2026", name: "Atsu Mensah Daniel", role: "mis_manager", dept: "all" },
-  { username: "accountant",  password: "Acct@2024",   name: "Accountant",         role: "accountant",        dept: "all" },
+  { username: "accountant",  password: "Acct@2026",   name: "Accountant",         role: "accountant",        dept: "all" },
   { username: "secretary1",  password: "Sec@pass1",   name: "Secretaries",        role: "secretary",         dept: "secretaries" },
   { username: "production1", password: "Prod@pass1",  name: "Mavis Oppong",       role: "staff",             dept: "production" },
  { username: "examsoffice", password: "Exam@office2026",  name: "Gabriel Amenyo",       role: "exams_cordinator",     dept: "exams" },
@@ -1720,6 +1738,7 @@ const NAV_ICONS = {
 staff: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
 health: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`,
 logins: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>`,
+complaints: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
 };
 
 const TAB_CONFIG = [
@@ -1732,7 +1751,8 @@ const TAB_CONFIG = [
   { id:"finance",     label:"Finance Summary",     dept:"all",         restricted:true,  staffOnly:false },
   { id:"staff",       label:"Staff",               dept:"all",         restricted:false, staffOnly:true  },
 { id:"health",      label:"Health Data",         dept:"all",         restricted:false, staffOnly:false, healthOnly:true },
-  { id:"logins",      label:"Login Activity",      dept:"all",         restricted:false, staffOnly:false, loginsOnly:true }
+  { id:"logins",      label:"Login Activity",      dept:"all",         restricted:false, staffOnly:false, loginsOnly:true },
+{ id:"complaints", label:"Complaints", dept:"all", restricted:false, staffOnly:false, loginsOnly:false },
 ];
 /* ══════════════════════════════════════════
    BOOT
@@ -1799,68 +1819,162 @@ function toggleTheme() {
 /* ══════════════════════════════════════════
    AUTH
 ══════════════════════════════════════════ */
+const USER_ROLE_MAP = {
+  "nickyjay013@gmail.com":          { name: "Super Admin",        role: "superadmin",        dept: "all" },
+  "chiefdirector@bestbrain.local":  { name: "Bacon Atsu Amengor", role: "chief_director",    dept: "all" },
+  "goldentouchpaintings@gmail.com": { name: "Francis Vinyo",      role: "managing_director", dept: "all" },
+  "bestbraina7@gmail.com":          { name: "Victoria Governor",  role: "general_manager",   dept: "all" },
+  "atsumd1@gmail.com":              { name: "Atsu Mensah Daniel", role: "mis_manager",       dept: "all" },
+  "accountant@bestbrain.local":     { name: "Accountant",         role: "accountant",        dept: "all" },
+  "euniceadepawhite@gmail.com":     { name: "Adepa Eunice",       role: "assistant",         dept: "all" },
+  "secretary1@bestbrain.local":     { name: "Secretaries",        role: "secretary",         dept: "secretaries" },
+  "production1@bestbrain.local":    { name: "Mavis Oppong",       role: "staff",             dept: "production" },
+  "amenyogabriel2@gmail.com":       { name: "Gabriel Amenyo",     role: "exams_cordinator",  dept: "exams" },
+  "debtoffice@bestbrain.local":     { name: "Debt Officer",       role: "staff",             dept: "debt" },
+  "salesrep1@bestbrain.local":      { name: "Nicholas Adebayo",   role: "manager",           dept: "sales" }
+};
+
 async function doLogin() {
-  const u = document.getElementById("login-user").value.trim().toLowerCase();
-  const p = document.getElementById("login-pass").value;
-  const err = document.getElementById("login-error");
-  
-  // Find user in credentials
-  const user = USERS.find(x => x.username === u && x.password === p);
-  if (!user) { 
-    err.style.display = "block";
-    console.warn("Login failed: invalid credentials");
-    return; 
+  const email    = document.getElementById("login-user").value.trim();
+  const password = document.getElementById("login-pass").value;
+  const errEl    = document.getElementById("login-error");
+  const loginBtn = document.querySelector(".btn-login");
+
+  if (!email || !password) {
+    errEl.textContent   = "Please enter your email and password.";
+    errEl.style.display = "block";
+    return;
   }
-  
-  currentUser = user;
-  err.style.display = "none";
-  
-  // Save to localStorage
-  localStorage.setItem("bb_session_user", JSON.stringify(user));
-  localStorage.setItem("bb_session_ts", Date.now().toString());
-  
-  console.log("👤 User logged in:", user.username);
-  
-  // Record login to Firestore
-  const loginRecorded = await recordLogin(user);
-  if (loginRecorded) {
-    console.log("Login session synced to server");
-  } else {
-    console.warn("Login synced to server is delayed/failed - will retry automatically");
+
+  loginBtn.textContent = "Signing in…";
+  loginBtn.disabled    = true;
+  errEl.style.display  = "none";
+
+  try {
+    // Wait for Firebase Auth to be ready
+    let auth = window.__bbAuth;
+    let tries = 0;
+    while (!auth && tries < 30) {
+      await new Promise(r => setTimeout(r, 300));
+      auth = window.__bbAuth;
+      tries++;
+    }
+    if (!auth) throw new Error("Auth service not ready. Please refresh the page.");
+
+    const result  = await window.__bbSignIn(auth, email, password);
+    const fbUser  = result.user;
+
+    // ── Look up role/name/dept from Firestore (userRoles/{uid}) ──
+    // This is what setup-users.js writes when you run `npm run setup`.
+    // Falls back to the old hardcoded USER_ROLE_MAP only if Firestore
+    // is unreachable, so people aren't locked out by a network blip.
+    let profile = null;
+    try {
+      const fb = window.__bbFB;
+      if (fb) {
+        const { db, doc, getDoc } = fb;
+        const roleSnap = await getDoc(doc(db, "userRoles", fbUser.uid));
+        if (roleSnap.exists()) {
+          const r = roleSnap.data();
+          if (r.active !== false) {
+            profile = { name: r.name, role: r.role, dept: r.dept };
+          }
+        }
+      }
+    } catch(roleErr) {
+      console.warn("userRoles lookup failed, trying fallback map:", roleErr);
+    }
+
+    // Fallback for any account not yet migrated to userRoles
+    if (!profile) {
+      profile = USER_ROLE_MAP[fbUser.email] || null;
+    }
+
+    if (!profile) {
+      await window.__bbSignOut(auth);
+      errEl.textContent   = "Account not authorised for this dashboard.";
+      errEl.style.display = "block";
+      loginBtn.textContent = "Sign In →";
+      loginBtn.disabled    = false;
+      return;
+    }
+
+    currentUser = {
+      username: fbUser.email,
+      name:     profile.name,
+      role:     profile.role,
+      dept:     profile.dept,
+      uid:      fbUser.uid
+    };
+
+    errEl.style.display = "none";
+    localStorage.setItem("bb_session_user", JSON.stringify(currentUser));
+    localStorage.setItem("bb_session_ts",   Date.now().toString());
+
+    await recordLogin(currentUser);
+    showApp();
+
+  } catch(e) {
+    console.error("Login error:", e.code, e.message);
+    const friendlyErrors = {
+      "auth/user-not-found":        "No account found with that email.",
+      "auth/wrong-password":        "Incorrect password. Please try again.",
+      "auth/invalid-email":         "Please enter a valid email address.",
+      "auth/too-many-requests":     "Too many failed attempts. Try again later.",
+      "auth/network-request-failed":"No internet connection. Check your network.",
+      "auth/invalid-credential":    "Incorrect email or password."
+    };
+    errEl.textContent   = friendlyErrors[e.code] || "Sign in failed. Check your credentials.";
+    errEl.style.display = "block";
+    loginBtn.textContent = "Sign In →";
+    loginBtn.disabled    = false;
   }
-  
-  // Show app (even if Firebase save is delayed/failed - graceful degradation)
-  showApp();
 }
+
 async function doLogout() {
-  console.log("User logging out...");
-  
   clearInterval(refreshTimer);
   refreshTimer = null;
-  
-  // Record logout to Firestore
+
   await recordLogout();
-  
-  // Clear localStorage
-  localStorage.removeItem("bb_session_user");  
-  localStorage.removeItem("bb_session_ts");    
-  
-  // Clear data
+
+  try {
+    const auth = window.__bbAuth;
+    if (auth) await window.__bbSignOut(auth);
+  } catch(e) { console.warn("SignOut error:", e); }
+
+  localStorage.removeItem("bb_session_user");
+  localStorage.removeItem("bb_session_ts");
+  localStorage.removeItem("bb_current_session_id");
+
   clearCache();
   currentUser = null;
-  liveData = JSON.parse(JSON.stringify(SAMPLE_DATA));
-  
-  // Hide app and show login
-  document.getElementById("app").style.display = "none";
+  liveData    = JSON.parse(JSON.stringify(SAMPLE_DATA));
+
+  document.getElementById("app").style.display          = "none";
   document.getElementById("login-screen").style.display = "flex";
-  document.getElementById("login-user").value = "";
-  document.getElementById("login-pass").value = "";
-  document.getElementById("login-error").style.display = "none";
-  
-  console.log("Logout complete");
+  document.getElementById("login-user").value  = "";
+  document.getElementById("login-pass").value  = "";
+  document.getElementById("login-error").style.display  = "none";
+
   setTimeout(() => document.getElementById("login-user")?.focus(), 120);
 }
  
+
+
+ function togglePasswordVisibility() {
+  const input = document.getElementById("login-pass");
+  const btn   = document.getElementById("toggle-pass");
+  if (!input) return;
+  if (input.type === "password") {
+    input.type   = "text";
+    btn.textContent = "";
+    btn.title    = "Hide password";
+  } else {
+    input.type   = "password";
+    btn.textContent = "👁";
+    btn.title    = "Show password";
+  }
+}
 
 /* ══════════════════════════════════════════
    APP SHELL
@@ -2487,6 +2601,7 @@ function renderTab(id) {
   case "staff":       renderStaff(panel); break;
     case "health":      renderHealth(panel); break;
     case "logins":      renderLogins(panel); break;
+    case "complaints": renderComplaints(panel); break;
   }
 }
 
@@ -8681,7 +8796,275 @@ async function checkFirebaseStatus() {
   console.log("═══════════════════════════════════════");
 }
  
+/* ══════════════════════════════════════════
+   COMPLAINTS MODULE
+══════════════════════════════════════════ */
+let complaintsData = [];
+let complaintsLoading = false;
 
+async function loadComplaintsFromFirestore() {
+  const fb = await staffDb();
+  if (!fb) return;
+  try {
+    const { db, collection, getDocs, orderBy, query } = fb;
+    const q = query(collection(db, "complaints"), orderBy("submittedAt", "desc"));
+    const snap = await getDocs(q);
+    complaintsData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch(e) {
+    console.error("Complaints load error:", e);
+    complaintsData = [];
+  }
+}
+
+async function renderComplaints(panel) {
+  panel.innerHTML = `<div class="loading-wrap"><div class="spinner"></div></div>`;
+  await loadComplaintsFromFirestore();
+  buildComplaintsPanel(panel);
+}
+
+function buildComplaintsPanel(panel) {
+  const list = complaintsData;
+  const total    = list.length;
+  const open     = list.filter(c => c.status === "Open").length;
+  const progress = list.filter(c => c.status === "In Progress").length;
+  const resolved = list.filter(c => c.status === "Resolved").length;
+  const critical = list.filter(c => c.priority === "Critical" && c.status !== "Resolved").length;
+
+  const regions = [...new Set(list.map(c => c.region).filter(Boolean))].sort();
+  const categories = [...new Set(list.map(c => c.category).filter(Boolean))].sort();
+
+  panel.innerHTML = `
+    <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:20px">
+      <div class="kpi-card blue"><div class="kpi-glow"></div>
+        <div class="kpi-label">Total</div>
+        <div class="kpi-value">${total}</div>
+        <div class="kpi-sub">All complaints</div>
+      </div>
+      <div class="kpi-card red"><div class="kpi-glow"></div>
+        <div class="kpi-label">Open</div>
+        <div class="kpi-value">${open}</div>
+        <div class="kpi-sub">Needs attention</div>
+      </div>
+      <div class="kpi-card amber"><div class="kpi-glow"></div>
+        <div class="kpi-label">In Progress</div>
+        <div class="kpi-value">${progress}</div>
+        <div class="kpi-sub">Being handled</div>
+      </div>
+      <div class="kpi-card green"><div class="kpi-glow"></div>
+        <div class="kpi-label">Resolved</div>
+        <div class="kpi-value">${resolved}</div>
+        <div class="kpi-sub">Closed</div>
+      </div>
+      <div class="kpi-card orange"><div class="kpi-glow"></div>
+        <div class="kpi-label">Critical</div>
+        <div class="kpi-value">${critical}</div>
+        <div class="kpi-sub">Unresolved urgent</div>
+      </div>
+    </div>
+
+    <div class="sh">
+      <div class="sh-left">
+        <div class="sh-title">All Complaints</div>
+        <span class="sh-count" id="cmp-count">${total} complaints</span>
+      </div>
+      <div class="sh-right">
+        <select class="filter-select" id="cmp-region" onchange="filterComplaints()">
+          <option value="">All Regions</option>
+          ${regions.map(r => `<option value="${r}">${r}</option>`).join("")}
+        </select>
+        <select class="filter-select" id="cmp-category" onchange="filterComplaints()">
+          <option value="">All Categories</option>
+          ${categories.map(c => `<option value="${c}">${c}</option>`).join("")}
+        </select>
+        <select class="filter-select" id="cmp-status-filter" onchange="filterComplaints()">
+          <option value="">All Status</option>
+          <option>Open</option>
+          <option>In Progress</option>
+          <option>Resolved</option>
+        </select>
+        <select class="filter-select" id="cmp-priority-filter" onchange="filterComplaints()">
+          <option value="">All Priority</option>
+          <option>Normal</option>
+          <option>Urgent</option>
+          <option>Critical</option>
+        </select>
+        <div class="search-wrap">
+          <span class="s-icon">⌕</span>
+          <input class="search-input" id="cmp-search" placeholder="Search school, ticket…" oninput="filterComplaints()">
+        </div>
+      </div>
+    </div>
+    <div id="cmp-table-wrap"></div>
+
+    <!-- Complaint detail modal root -->
+    <div id="cmp-modal-root"></div>`;
+
+  filterComplaints();
+}
+
+function filterComplaints() {
+  const list     = complaintsData;
+  const region   = document.getElementById("cmp-region")?.value || "";
+  const category = document.getElementById("cmp-category")?.value || "";
+  const status   = document.getElementById("cmp-status-filter")?.value || "";
+  const priority = document.getElementById("cmp-priority-filter")?.value || "";
+  const q        = (document.getElementById("cmp-search")?.value || "").toLowerCase();
+
+  const filtered = list.filter(c => {
+    if (region   && c.region   !== region)   return false;
+    if (category && c.category !== category) return false;
+    if (status   && c.status   !== status)   return false;
+    if (priority && c.priority !== priority) return false;
+    if (q && ![c.ticket, c.schoolName, c.city, c.category, c.description, c.contactPerson].join(" ").toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  const cnt = document.getElementById("cmp-count");
+  if (cnt) cnt.textContent = filtered.length + " complaints";
+
+  const wrap = document.getElementById("cmp-table-wrap");
+  if (!wrap) return;
+
+  const prioColor   = { Normal:"badge-blue", Urgent:"badge-amber", Critical:"badge-red" };
+  const statusColor = { Open:"badge-red", "In Progress":"badge-amber", Resolved:"badge-green" };
+
+  if (!filtered.length) {
+    wrap.innerHTML = `<div class="table-wrap scroll"><table>
+      <thead><tr><th>Ticket</th><th>School</th><th>Region</th><th>City</th><th>Category</th><th>Priority</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
+      <tbody><tr class="empty-row"><td colspan="9">No complaints found.</td></tr></tbody>
+    </table></div>`;
+    return;
+  }
+
+  wrap.innerHTML = `<div class="table-wrap scroll"><table>
+    <thead><tr>
+      <th>Ticket</th>
+      <th>School</th>
+      <th>Region</th>
+      <th>City</th>
+      <th>Category</th>
+      <th>Priority</th>
+      <th>Status</th>
+      <th style="white-space:nowrap">Submitted</th>
+      <th>Action</th>
+    </tr></thead>
+    <tbody>
+      ${filtered.map(c => {
+        const date = c.submittedAt?.toDate ? c.submittedAt.toDate().toLocaleDateString("en-GB") : (c.submittedAt ? new Date(c.submittedAt).toLocaleDateString("en-GB") : "—");
+        return `<tr>
+          <td style="font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--blue);white-space:nowrap">${c.ticket || "—"}</td>
+          <td style="font-weight:500;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.schoolName || "—"}</td>
+          <td style="font-size:12px;color:var(--text2)">${c.region || "—"}</td>
+          <td style="font-size:12px;color:var(--text2)">${c.city || "—"}</td>
+          <td style="font-size:12px">${c.category || "—"}</td>
+          <td><span class="badge ${prioColor[c.priority] || "badge-blue"}">${c.priority || "Normal"}</span></td>
+          <td><span class="badge ${statusColor[c.status] || "badge-blue"}">${c.status || "Open"}</span></td>
+          <td style="font-size:11px;color:var(--text2);font-family:var(--font-mono);white-space:nowrap">${date}</td>
+          <td>
+            <div class="btn-row">
+              <button class="btn-sm btn-edit" onclick="openComplaintModal('${c.id}')">View</button>
+            </div>
+          </td>
+        </tr>`;
+      }).join("")}
+    </tbody>
+  </table></div>`;
+}
+
+function openComplaintModal(id) {
+  const c = complaintsData.find(x => x.id === id);
+  if (!c) return;
+  const statusColor = { Open:"badge-red", "In Progress":"badge-amber", Resolved:"badge-green" };
+  const prioColor   = { Normal:"badge-blue", Urgent:"badge-amber", Critical:"badge-red" };
+  const date = c.submittedAt?.toDate ? c.submittedAt.toDate().toLocaleString("en-GB") : (c.submittedAt ? new Date(c.submittedAt).toLocaleString("en-GB") : "—");
+
+  const root = document.getElementById("cmp-modal-root");
+  root.innerHTML = `
+    <div style="position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.6);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;padding:20px" onclick="closeCmpModal(event)">
+      <div style="background:var(--bg1);border:1px solid var(--border);border-radius:var(--r-xl);width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 40px 80px rgba(0,0,0,.4)" onclick="event.stopPropagation()">
+
+        <!-- Header -->
+        <div style="padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+          <div>
+            <div style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--blue);margin-bottom:4px">${c.ticket || "—"}</div>
+            <div style="font-size:17px;font-weight:700;font-family:var(--font-display)">${c.schoolName || "Unknown School"}</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:3px">${c.region || ""}${c.city ? " · " + c.city : ""}</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-start">
+            <span class="badge ${prioColor[c.priority] || "badge-blue"}">${c.priority || "Normal"}</span>
+            <span class="badge ${statusColor[c.status] || "badge-blue"}">${c.status || "Open"}</span>
+          </div>
+          <button onclick="closeCmpModal()" style="width:30px;height:30px;border-radius:50%;background:var(--bg2);border:1px solid var(--border);cursor:pointer;font-size:15px;color:var(--text2);display:flex;align-items:center;justify-content:center;flex-shrink:0">✕</button>
+        </div>
+
+        <!-- Body -->
+        <div style="padding:20px 24px">
+
+          <!-- Info grid -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
+            ${cmpField("Contact Person", c.contactPerson)}
+            ${cmpField("Phone", c.phone)}
+            ${cmpField("School ID", c.schoolId || "—")}
+            ${cmpField("Category", c.category)}
+            ${cmpField("Related Exam", c.relatedExam || "—")}
+            ${cmpField("Submitted", date)}
+          </div>
+
+          <!-- Description -->
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-md);padding:14px;margin-bottom:18px">
+            <div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Complaint Description</div>
+            <div style="font-size:13px;line-height:1.7;color:var(--text)">${c.description || "No description provided."}</div>
+          </div>
+
+          <!-- Update status -->
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-md);padding:14px">
+            <div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Update Status</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <select id="cmp-new-status" class="filter-select" style="flex:1;min-width:140px">
+                <option value="Open" ${c.status==="Open"?"selected":""}>Open</option>
+                <option value="In Progress" ${c.status==="In Progress"?"selected":""}>In Progress</option>
+                <option value="Resolved" ${c.status==="Resolved"?"selected":""}>Resolved</option>
+              </select>
+              <button class="btn-add-staff" style="padding:8px 18px;font-size:13px" onclick="updateComplaintStatus('${c.id}')">
+                Save Status
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function cmpField(label, value) {
+  return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px">
+    <div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">${label}</div>
+    <div style="font-size:13px;font-weight:500;color:var(--text)">${value || "—"}</div>
+  </div>`;
+}
+
+function closeCmpModal(e) {
+  if (e && e.target !== e.currentTarget) return;
+  const root = document.getElementById("cmp-modal-root");
+  if (root) root.innerHTML = "";
+}
+
+async function updateComplaintStatus(id) {
+  const newStatus = document.getElementById("cmp-new-status")?.value;
+  if (!newStatus) return;
+  const fb = await staffDb();
+  if (!fb) { showToast("Firebase not ready"); return; }
+  try {
+    const { db, doc, updateDoc, serverTimestamp } = fb;
+    await updateDoc(doc(db, "complaints", id), { status: newStatus, updatedAt: serverTimestamp() });
+    const local = complaintsData.find(c => c.id === id);
+    if (local) local.status = newStatus;
+    showToast("✓ Status updated to: " + newStatus);
+    closeCmpModal();
+    buildComplaintsPanel(document.getElementById("panel-complaints"));
+  } catch(e) {
+    showToast("Update failed: " + e.message);
+  }
+}
 </script>
 </body>
 </html>
