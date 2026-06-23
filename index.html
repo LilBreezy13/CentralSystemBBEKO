@@ -4044,7 +4044,7 @@ function parseBranchSummary(raw) {
 
   // KPI rows — the proxy returns all rows; we look for the summary text in col[1]
   let individSchools = 0, distSchools = 0, totalSchools = 0, optionATotal = 0;
-  let repRows = [];
+  let repRows = [], distRows = [], inDistSection = false;
   let inRepSection = false;
 
   rows.forEach(r => {
@@ -4066,6 +4066,11 @@ function parseBranchSummary(raw) {
       optionATotal = parseInt((r[19]||0).toString().replace(/[^0-9]/g,"")) || 0;
     }
 
+    // Detect district section marker (same logic as parseStatistics)
+    if ((c1 === "DISTRICTS" || c1 === "DISTRICT" || (c1.includes("DISTRICT") && !r[2])) && !r[2]) {
+      inDistSection = true; return;
+    }
+
     // Rep data rows: col[1] is a number (S/N), col[2] is a name
     const sn = parseInt(r[1]);
     const name = (r[2]||"").toString().trim();
@@ -4074,7 +4079,11 @@ function parseBranchSummary(raw) {
       const grades  = [5,6,7,8,9,10,11,12,13,14,15,16].map(ci => parseInt((r[ci]||0).toString().replace(/[^0-9]/g,""))||0);
       const optA    = parseInt((r[18]||0).toString().replace(/[^0-9]/g,"")) || 0;
       const total   = grades.reduce((s,v) => s+v, 0);
-      repRows.push({ sn, name, schools, grades, optionA: optA, total });
+      if (inDistSection) {
+        distRows.push({ sn, name, schools, grades, optionA: optA, total });
+      } else {
+        repRows.push({ sn, name, schools, grades, optionA: optA, total });
+      }
     }
   });
 
@@ -4087,7 +4096,7 @@ function parseBranchSummary(raw) {
     optionATotal = repRows.reduce((s,r) => s + r.optionA, 0);
   }
 
-  return { individSchools, distSchools, totalSchools, optionATotal, repRows };
+  return { individSchools, distSchools, totalSchools, optionATotal, repRows, distRows };
 }
 
 /* ── Parse STATISTICS sheet (general view) ── */
@@ -4114,7 +4123,7 @@ function parseStatistics(raw) {
     }
 
     // District section marker
-    if (c1 === "DISTRICTS" && !r[2]) { inDistSection = true; return; }
+   if ((c1 === "DISTRICTS" || c1 === "DISTRICT" || (c1.includes("DISTRICT") && !r[2])) && !r[2]) { inDistSection = true; return; }
 
     const sn = parseInt(r[1]);
     const name = (r[2]||"").toString().trim();
@@ -4150,7 +4159,7 @@ function parseRepSheet(raw) {
   rows.forEach((r, i) => {
     if ((r[2]||"").toString().toUpperCase().includes("NAME OF SCHOOL")) headerIdx = i;
   });
-  if (headerIdx < 0) headerIdx = 3; // default row 4 (0-indexed 3)
+  if (headerIdx < 0) headerIdx = 3; 
 
   const dataRows = rows.slice(headerIdx + 1).filter(r => {
     const sn = parseInt(r[1]);
@@ -5128,12 +5137,25 @@ function renderSalesKPIs(data) {
   const individSchools = data?.individSchools || 0;
   const distSchools    = data?.distSchools    || 0;
   const totalSchools   = data?.totalSchools   || (individSchools + distSchools) || 0;
-  const repRows        = data?.repRows        || [];
-  const totalCands     = repRows.reduce((s, r) => s + r.total, 0);
-  const totalReps      = repRows.filter(r => r.schools > 0).length;
-  const topRep         = repRows.slice().sort((a, b) => b.total - a.total)[0];
-  const topRepSchools  = repRows.slice().sort((a, b) => b.schools - a.schools)[0];
-
+ const repRows        = data?.repRows        || [];
+const distNames      = new Set((data?.distRows || []).map(d => d.name.toUpperCase()));
+  const repOnlyRows    = repRows.filter(r => {
+    const up = r.name.toUpperCase();
+    if (distNames.has(up)) return false;
+    if (up.includes("DISTRICT")) return false;
+    // For branch views (no distRows), also exclude rows that look like district summaries
+    // by filtering out any name that appears to be a geographic district (not a person's name)
+    if (salesView !== "general" && (
+      up.includes("DIST.") ||
+      up.includes("DIST ") ||
+      up.match(/\bDIST\b/)
+    )) return false;
+    return true;
+  });
+  const totalCands     = repOnlyRows.reduce((s, r) => s + r.total, 0);
+  const totalReps      = repOnlyRows.filter(r => r.schools > 0).length;
+  const topRep         = repOnlyRows.slice().sort((a, b) => b.total - a.total)[0];
+  const topRepSchools  = repOnlyRows.slice().sort((a, b) => b.schools - a.schools)[0];
   let totalBill = 0;
   let billNote  = "";
   if (salesView === "general") {
@@ -7582,7 +7604,7 @@ function buildAllSectionsHTML(d) {
   </div>
 
   <!-- ── EMERGENCY CONTACT ── -->
-  ${si("Emergency Contact (Next of Kin)","🚨")}
+  ${si("Emergency Contact (Next of Kin)","")}
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:12px">
     <div class="form-group">
       <label class="form-label">Full Name <span class="req">*</span></label>
@@ -7859,7 +7881,7 @@ function renderFormSection() {
     /* ─── MEDICAL ─── */
     medical: `
       <div style="background:rgba(255,184,48,.06);border:1px solid rgba(255,184,48,.2);border-radius:var(--r-md);padding:12px 16px;margin-bottom:18px;font-size:12px;color:var(--text2)">
-        ⚠️ Medical information is confidential and used for emergency purposes only.
+         Medical information is confidential and used for emergency purposes only.
       </div>
       <div class="form-row">
         <div class="form-group">
@@ -7937,12 +7959,12 @@ function renderFormSection() {
         <input type="file" id="doc-file-input" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style="display:none" onchange="handleDocUpload(event)">
         <div class="doc-list" id="doc-file-list" style="margin-top:10px">
           ${addStaffFiles.documents.map((f,i)=>`<div class="doc-item">
-            <span style="font-size:15px">📄</span>
+            <span style="font-size:15px"></span>
             <span class="doc-item-name">${f.name}</span>
             <span class="doc-remove" onclick="removeDoc(${i})">✕</span>
           </div>`).join("")}
           ${(d.documentUrls||[]).map(doc=>`<div class="doc-item">
-            <span style="font-size:15px">📄</span>
+            <span style="font-size:15px"></span>
             <span class="doc-item-name"><a href="${doc.url}" target="_blank" style="color:var(--blue)">${doc.name}</a></span>
           </div>`).join("")}
         </div>
