@@ -40,6 +40,9 @@
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
 /* ═══════════════════════════════════════════
    DESIGN TOKENS
@@ -667,7 +670,53 @@ body.light .topbar { background: rgba(240,243,250,.9); }
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+::-webkit-scrollbar-thumb:hover { background: var(--text3); border-radius: 4px; }
+
+/* ── Export Buttons ── */
+.btn-export {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 13px; border-radius: var(--r-sm);
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  border: 1px solid var(--border2); transition: all .15s;
+  font-family: var(--font-body);
+}
+.btn-export-excel { background: rgba(0,229,160,.08); color: var(--green); border-color: rgba(0,229,160,.25); }
+.btn-export-excel:hover { background: rgba(0,229,160,.15); }
+.btn-export-pdf   { background: rgba(255,77,109,.08);  color: var(--red);   border-color: rgba(255,77,109,.25); }
+.btn-export-pdf:hover   { background: rgba(255,77,109,.15); }
+
+/* ── Print styles ── */
+@media print {
+  body { background: #fff !important; color: #000 !important; }
+  .sidebar, .topbar, .btn-export, .btn-add-staff, .btn-footer,
+  .nav-btn, .filter-select, .search-wrap, .date-input,
+  .chart-tabs, #global-search-wrap, #branch-badge, .live-pill,
+  #last-update-top, .btn-print, .sh-right { display: none !important; }
+  .main { margin-left: 0 !important; }
+  .panel { display: block !important; }
+  .panel:not(.active) { display: none !important; }
+  .content { padding: 0 !important; }
+  .kpi-grid { grid-template-columns: repeat(3, 1fr) !important; }
+  .charts-row, .charts-row-3 { grid-template-columns: repeat(2, 1fr) !important; }
+  .table-wrap { border: 1px solid #ddd !important; }
+  table th { background: #f0f0f0 !important; color: #000 !important; }
+  .kpi-card { background: #f7f7f7 !important; border: 1px solid #ddd !important; break-inside: avoid; }
+  .kpi-value, .kpi-label { color: #000 !important; }
+  .badge { border: 1px solid #ccc !important; }
+  canvas { max-width: 100% !important; }
+  @page { margin: 1.5cm; size: A4 landscape; }
+  .print-header { display: block !important; }
+}
+.print-header { display: none; }
+.btn-print {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 13px; border-radius: var(--r-sm);
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  border: 1px solid var(--border2); transition: all .15s;
+  font-family: var(--font-body);
+  background: rgba(61,156,245,.08); color: var(--blue); border-color: rgba(61,156,245,.25);
+}
+.btn-print:hover { background: rgba(61,156,245,.15); }
 
 /* ═══════════════════════════════════════════
    NUMBER FONT
@@ -1088,6 +1137,7 @@ body.light .topbar { background: rgba(240,243,250,.9); }
     <div class="topbar">
       <button class="menu-toggle" id="menu-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
       <div class="topbar-title" id="topbar-title">Overview <span id="topbar-sub"></span></div>
+   
       <div class="topbar-right">
         <div id="branch-badge" style="display:flex;align-items:center;gap:6px;background:rgba(61,156,245,.1);border:1px solid rgba(61,156,245,.3);border-radius:20px;padding:4px 12px;font-size:11px;font-family:var(--font-mono);color:var(--blue);cursor:pointer;transition:all .2s;" onclick="openBranchSwitcher()" title="Switch Branch">
           <span id="branch-dot" style="width:7px;height:7px;border-radius:50%;background:var(--blue);display:inline-block"></span>
@@ -1137,6 +1187,13 @@ body.light .topbar { background: rgba(240,243,250,.9); }
 </div>
 
 <div id="toast"></div>
+<div class="print-header" id="print-header" style="margin-bottom:20px">
+  <div style="display:flex;align-items:center;gap:14px;padding-bottom:12px;border-bottom:2px solid #000;margin-bottom:16px">
+    <strong style="font-size:20px">Best Brain Ltd</strong>
+    <span style="font-size:13px;color:#666" id="print-panel-title"></span>
+    <span style="margin-left:auto;font-size:11px;color:#888" id="print-timestamp"></span>
+  </div>
+</div>
 
 <script>
 /* ══════════════════════════════════════════
@@ -2404,9 +2461,11 @@ async function loadAllData() {
   const saved = {
     actBranch:   document.getElementById("activity-branch")?.value  || "",
     actType:     document.getElementById("activity-type")?.value    || "",
-    secSearch:   document.getElementById("search-sec")?.value       || "",
+   secSearch:   document.getElementById("search-sec")?.value       || "",
     secFrom:     document.getElementById("sec-from")?.value         || "",
     secTo:       document.getElementById("sec-to")?.value           || "",
+    examFrom:    document.getElementById("exam-from")?.value        || "",
+    examTo:      document.getElementById("exam-to")?.value          || "",
     secBranch:   document.getElementById("sec-branch")?.value       || "",
     prodSearch:  document.getElementById("search-prod")?.value      || "",
     prodExamIdx: prodExamIdx,      
@@ -2506,6 +2565,8 @@ salesViewSaved:   salesView   || "general",
     set("exam-type",   saved.examType);
     set("exam-region", saved.examRegion);
     set("search-exam", saved.examSearch);
+    set("exam-from",   saved.examFrom);
+    set("exam-to",     saved.examTo);
     renderExamRows();
 
  } else if (currentTab === "sales") {
@@ -2608,7 +2669,7 @@ function renderTab(id) {
 /* ══════════════════════════════════════════
    HELPERS
 ══════════════════════════════════════════ */
-const ghs = n => "GHS " + n.toLocaleString("en-GH",{minimumFractionDigits:2});
+const ghs = n => { const v = isNaN(n) || n == null ? 0 : n; return "GHS " + v.toLocaleString("en-GH",{minimumFractionDigits:2}); };
 const lc  = () => document.body.classList.contains("light") ? "#64748b" : "#7a8aaa";
 const gc  = () => document.body.classList.contains("light") ? "#dde3f0" : "#1a2236";
 function destroyChart(id) {
@@ -2691,12 +2752,13 @@ function renderOverview(panel) {
   const allJRows = linkedBranchKeys.flatMap(k => (allBranchJournals[k]?.rows || []));
   const currentJRows = journalData?.rows || [];
   const allFinRows = allJRows.length > 0 ? allJRows : currentJRows;
-  const cashIn  = allFinRows.reduce((s,r) => s + parseFloat(r[5]||0), 0);
-  const cashOut = allFinRows.reduce((s,r) => s + parseFloat(r[6]||0), 0);
+  const cashIn  = allFinRows.reduce((s,r) => { const v = parseFloat(r[5]); return s + (isNaN(v) ? 0 : v); }, 0);
+  const cashOut = allFinRows.reduce((s,r) => { const v = parseFloat(r[6]); return s + (isNaN(v) ? 0 : v); }, 0);
   const netBalance = linkedBranchKeys.reduce((total, k) => {
     const rows = (allBranchJournals[k]?.rows || []).filter(r => r[7] && parseFloat(r[7]) !== 0);
     const last = rows.slice(-1)[0];
-    return total + (last ? parseFloat(last[7]) : 0);
+    const v = last ? parseFloat(last[7]) : 0;
+    return total + (isNaN(v) ? 0 : v);
   }, 0);
 
  // Schools Registered + Total Bill — from pre-computed cache (instant)
@@ -3081,7 +3143,9 @@ const sourceRows = Object.entries(sourceTotals).sort((a,b) => b[1]-a[1])
         <input type="date" class="date-input" id="sec-from" onchange="filterSec()">
         <span style="font-size:11px;color:var(--text2);font-family:var(--font-mono);padding:4px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);white-space:nowrap">To</span>
         <input type="date" class="date-input" id="sec-to" onchange="filterSec()">
-        <div class="search-wrap"><span class="s-icon">\u2315</span><input class="search-input" id="search-sec" placeholder="Search journal\u2026" oninput="filterSec()"></div>
+      <div class="search-wrap"><span class="s-icon">\u2315</span><input class="search-input" id="search-sec" placeholder="Search journal\u2026" oninput="filterSec()"></div>
+        <button class="btn-export btn-export-excel" onclick="exportTableToExcel('sec-table-wrap','Journal')">⬇ Excel</button>
+        <button class="btn-export btn-export-pdf"   onclick="exportTableToPDF('sec-table-wrap','Cash Flow Journal','Journal')">⬇ PDF</button>
       </div>
     </div>
     <div id="sec-strip"></div>
@@ -3715,10 +3779,14 @@ const GRADE_COLS = [8,9,10,11,12,13,14,15,16,17,18]; // ← already correct!
         <span class="sh-count" id="exam-count">— records</span>
       </div>
       <div class="sh-right">
-        <select class="filter-select" id="exam-rep" onchange="filterExams()" style="max-width:170px">
+       <select class="filter-select" id="exam-rep" onchange="filterExams()" style="max-width:170px">
           <option value="">All Reps</option>
           ${reps.map(r=>`<option value="${r}">${r}</option>`).join("")}
         </select>
+        <span style="font-size:11px;color:var(--text2);font-family:var(--font-mono);padding:4px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);white-space:nowrap">From</span>
+        <input type="date" class="date-input" id="exam-from" onchange="filterExams()">
+        <span style="font-size:11px;color:var(--text2);font-family:var(--font-mono);padding:4px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);white-space:nowrap">To</span>
+        <input type="date" class="date-input" id="exam-to" onchange="filterExams()">
         <select class="filter-select" id="exam-type" onchange="filterExams()">
           <option value="">All Types</option>
           ${types.map(t=>`<option value="${t}">${t}</option>`).join("")}
@@ -3727,9 +3795,12 @@ const GRADE_COLS = [8,9,10,11,12,13,14,15,16,17,18]; // ← already correct!
           <option value="">All Regions</option>
           ${regions.map(r=>`<option value="${r}">${r}</option>`).join("")}
         </select>
-        <div class="search-wrap"><span class="s-icon">⌕</span>
+       <div class="search-wrap"><span class="s-icon">⌕</span>
           <input class="search-input" id="search-exam" placeholder="Search school…" oninput="filterExams()">
         </div>
+     <button class="btn-export btn-export-excel" onclick="exportTableToExcel('exam-table-wrap','Exam_Registrations')">⬇ Excel</button>
+        <button class="btn-export btn-export-pdf"   onclick="exportTableToPDF('exam-table-wrap','Registration Records','Exam_Registrations')">⬇ PDF</button>
+        <button class="btn-print" onclick="printPanel('Registration Records')">⎙ Print</button>
       </div>
     </div>
 
@@ -3777,19 +3848,28 @@ function renderExamRows() {
   const GRADE_COLS = [8,9,10,11,12,13,14,15,16,17,18];
   const PER_PAGE   = 10;
 
-  const rep    = (document.getElementById("exam-rep")?.value    || "").trim();
+ const rep    = (document.getElementById("exam-rep")?.value    || "").trim();
   const type   = (document.getElementById("exam-type")?.value   || "").trim();
   const region = (document.getElementById("exam-region")?.value || "").trim();
   const q      = (document.getElementById("search-exam")?.value || "").toLowerCase();
+  const from   =  document.getElementById("exam-from")?.value   || "";
+  const to     =  document.getElementById("exam-to")?.value     || "";
 
   const filtered = d.rows.filter(r => {
     if (rep    && (r[2]||"").trim() !== rep)    return false;
     if (type   && (r[4]||"").trim() !== type)   return false;
     if (region && (r[3]||"").trim() !== region) return false;
     if (q && ![r[2],r[3],r[4],r[5],r[6],r[19]].join(" ").toLowerCase().includes(q)) return false;
+    if (from || to) {
+      const rawDate = (r[0]||"").toString().trim();
+      const d_obj = rawDate ? new Date(rawDate) : null;
+      if (!d_obj || isNaN(d_obj)) return true;
+      const iso = d_obj.toISOString().slice(0,10);
+      if (from && iso < from) return false;
+      if (to   && iso > to)   return false;
+    }
     return true;
   });
-
   const cnt = document.getElementById("exam-count");
   if (cnt) cnt.textContent = filtered.length + " records";
 
@@ -5279,7 +5359,9 @@ function renderDebt(panel) {
         <select class="filter-select" id="debt-status" onchange="filterDebt()">
           <option value="">All Status</option><option>Cleared</option><option>Partial</option><option>Unpaid</option>
         </select>
-        <div class="search-wrap"><span class="s-icon">⌕</span><input class="search-input" id="search-debt" placeholder="Search school…" oninput="filterDebt()"></div>
+       <div class="search-wrap"><span class="s-icon">⌕</span><input class="search-input" id="search-debt" placeholder="Search school…" oninput="filterDebt()"></div>
+        <button class="btn-export btn-export-excel" onclick="exportTableToExcel('debt-table-wrap','Debt_Records')">⬇ Excel</button>
+        <button class="btn-export btn-export-pdf"   onclick="exportTableToPDF('debt-table-wrap','Debt Records','Debt_Records')">⬇ PDF</button>
       </div>
     </div>
     <div id="debt-strip"></div>
@@ -5385,14 +5467,15 @@ function renderFinance(panel) {
            !b.journalSheetId.startsWith("YOUR_");
   });
   const finAllRows  = finLinkedKeys.flatMap(k => (allBranchJournals[k]?.rows || []));
-  const finTotalIn  = finAllRows.reduce((s,r) => s + parseFloat(r[5]||0), 0);
-  const finTotalOut = finAllRows.reduce((s,r) => s + parseFloat(r[6]||0), 0);
+  const finTotalIn  = finAllRows.reduce((s,r) => { const v = parseFloat(r[5]); return s + (isNaN(v) ? 0 : v); }, 0);
+  const finTotalOut = finAllRows.reduce((s,r) => { const v = parseFloat(r[6]); return s + (isNaN(v) ? 0 : v); }, 0);
   // Total Cash = sum of all inflow rows (Dr column) across linked branches
-  const finTotalCash = finAllRows.reduce((s,r) => s + parseFloat(r[5]||0), 0);
+  const finTotalCash = finAllRows.reduce((s,r) => { const v = parseFloat(r[5]); return s + (isNaN(v) ? 0 : v); }, 0);
   const finBalance  = finLinkedKeys.reduce((total, k) => {
     const rows = (allBranchJournals[k]?.rows || []).filter(r => r[7] && parseFloat(r[7]) !== 0);
     const last = rows.slice(-1)[0];
-    return total + (last ? parseFloat(last[7]) : 0);
+    const v = last ? parseFloat(last[7]) : 0;
+    return total + (isNaN(v) ? 0 : v);
   }, 0);
 
   panel.innerHTML = `
@@ -5432,6 +5515,8 @@ function renderFinance(panel) {
         <span style="font-size:11px;color:var(--text2);font-family:var(--font-mono);padding:4px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm)">To</span>
         <input type="date" class="date-input" id="fin-to" onchange="renderFinLog()">
         <div class="search-wrap"><span class="s-icon">⌕</span><input class="search-input" id="search-finance" placeholder="Search…" oninput="renderFinLog()"></div>
+        <button class="btn-export btn-export-excel" onclick="exportTableToExcel('fin-log-wrap','Finance_Log')">⬇ Excel</button>
+        <button class="btn-export btn-export-pdf"   onclick="exportKPIsToPDF('panel-finance','Finance Summary','Finance_Summary')">⬇ PDF</button>
       </div>
     </div>
     <div id="fin-log-strip"></div>
@@ -5708,6 +5793,199 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove("show"), 3200);
 }
 
+/* ══════════════════════════════════════════
+   EXPORT HELPERS
+══════════════════════════════════════════ */
+
+
+/* ══════════════════════════════════════════
+   GLOBAL SEARCH
+══════════════════════════════════════════ */
+
+
+/* ══════════════════════════════════════════
+   PRINT
+══════════════════════════════════════════ */
+function printPanel(title) {
+  const titleEl = document.getElementById("print-panel-title");
+  const tsEl    = document.getElementById("print-timestamp");
+  if (titleEl) titleEl.textContent = title || TAB_CONFIG.find(t=>t.id===currentTab)?.label || "";
+  if (tsEl)    tsEl.textContent    = "Printed: " + new Date().toLocaleString("en-GB") + " · User: " + (currentUser?.name || "—");
+  window.print();
+}
+
+/* ══════════════════════════════════════════
+   GLOBAL SEARCH
+══════════════════════════════════════════ */
+
+let _gsTimer = null;
+function globalSearch(q) {
+  const wrap = document.getElementById("global-search-results");
+  if (!wrap) return;
+  q = q.trim().toLowerCase();
+  if (!q || q.length < 2) { wrap.style.display = "none"; return; }
+
+  clearTimeout(_gsTimer);
+  _gsTimer = setTimeout(() => {
+    const results = [];
+
+    // Search Exams
+    (liveData.exams?.rows || []).forEach(r => {
+      const school = (r[5]||"").toLowerCase(), rep = (r[2]||"").toLowerCase(), region = (r[3]||"").toLowerCase();
+      if (school.includes(q) || rep.includes(q) || region.includes(q)) {
+        results.push({ tab:"exams", icon:"🏫", label: r[5]||"—", sub: (r[2]||"") + " · " + (r[3]||"") });
+      }
+    });
+
+    // Search Debt
+    (liveData.debt?.rows || []).forEach(r => {
+      const school = (r[3]||"").toLowerCase(), rep = (r[2]||"").toLowerCase();
+      if (school.includes(q) || rep.includes(q)) {
+        results.push({ tab:"debt", icon:"💰", label: r[3]||"—", sub: "Rep: " + (r[2]||"") + " · " + (r[1]||"") });
+      }
+    });
+
+    // Search Journal / Secretaries
+    (journalData?.rows || []).forEach(r => {
+      const desc = (r[2]||"").toLowerCase(), cat = (r[3]||"").toLowerCase();
+      if (desc.includes(q) || cat.includes(q)) {
+        results.push({ tab:"secretaries", icon:"📒", label: r[2]||"—", sub: "Journal · " + (r[0]||"") });
+      }
+    });
+
+    // Search Complaints
+    (complaintsData || []).forEach(c => {
+      const name = (c.schoolName||"").toLowerCase(), ticket = (c.ticket||"").toLowerCase();
+      if (name.includes(q) || ticket.includes(q)) {
+        results.push({ tab:"complaints", icon:"📋", label: c.schoolName||"—", sub: "Ticket: " + (c.ticket||"") + " · " + (c.status||"") });
+      }
+    });
+
+    const top = results.slice(0, 12);
+    if (!top.length) {
+      wrap.innerHTML = `<div style="padding:20px;text-align:center;color:var(--text2);font-size:13px">No results for "<strong>${q}</strong>"</div>`;
+    } else {
+      wrap.innerHTML = top.map((r,i) => `
+        <div onclick="gsNavigate('${r.tab}',${i})" style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background=''">
+          <span style="font-size:18px;flex-shrink:0;margin-top:1px">${r.icon}</span>
+          <div style="min-width:0">
+            <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${highlight(r.label, q)}</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:2px">${r.sub}</div>
+          </div>
+          <span style="margin-left:auto;font-size:10px;color:var(--text3);flex-shrink:0;padding-top:2px">${TAB_CONFIG.find(t=>t.id===r.tab)?.label||r.tab}</span>
+        </div>`).join("") +
+        (results.length > 12 ? `<div style="padding:8px 14px;font-size:11px;color:var(--text2)">+${results.length-12} more — refine your search</div>` : "");
+    }
+    wrap.style.display = "block";
+  }, 180);
+}
+
+function highlight(text, q) {
+  if (!q) return text;
+  const idx = text.toLowerCase().indexOf(q);
+  if (idx < 0) return text;
+  return text.slice(0, idx) + `<mark style="background:rgba(61,156,245,.25);color:var(--text);border-radius:2px;padding:0 1px">${text.slice(idx, idx+q.length)}</mark>` + text.slice(idx+q.length);
+}
+
+function gsNavigate(tab, resultIdx) {
+  document.getElementById("global-search-results").style.display = "none";
+  document.getElementById("global-search-input").value = "";
+  switchTab(tab);
+}
+
+// Close global search on outside click
+document.addEventListener("click", e => {
+  if (!document.getElementById("global-search-wrap")?.contains(e.target)) {
+    const r = document.getElementById("global-search-results");
+    if (r) r.style.display = "none";
+  }
+});
+
+/* ══════════════════════════════════════════
+   EXPORT HELPERS
+══════════════════════════════════════════ */
+
+function exportTableToExcel(tableId, filename) {
+  const table = document.querySelector("#" + tableId + " table") ||
+                document.getElementById(tableId)?.closest(".table-wrap")?.querySelector("table");
+  if (!table) { showToast("⚠ No table found to export"); return; }
+  if (!window.XLSX) { showToast("⚠ Excel library not loaded"); return; }
+  try {
+    const wb = XLSX.utils.table_to_book(table, { sheet: filename || "Data", raw: false });
+    XLSX.writeFile(wb, (filename || "export") + "_" + new Date().toISOString().slice(0,10) + ".xlsx");
+    showToast("✓ Excel file downloaded");
+  } catch(e) { showToast("Export failed: " + e.message); }
+}
+
+function exportTableToPDF(tableId, title, filename) {
+  const table = document.querySelector("#" + tableId + " table") ||
+                document.getElementById(tableId)?.closest(".table-wrap")?.querySelector("table");
+  if (!table) { showToast("⚠ No table found to export"); return; }
+  if (!window.jspdf) { showToast("⚠ PDF library not loaded"); return; }
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+    const heads = [...table.querySelectorAll("thead th")].map(th => th.innerText.trim());
+    const body  = [...table.querySelectorAll("tbody tr")].map(tr =>
+      [...tr.querySelectorAll("td")].map(td => td.innerText.trim())
+    );
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("Best Brain Ltd — " + (title || "Report"), 40, 36);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(120);
+    doc.text("Exported: " + new Date().toLocaleString("en-GB"), 40, 52);
+    doc.autoTable({
+      head: [heads], body,
+      startY: 65,
+      styles: { fontSize: 8, cellPadding: 4 },
+      headStyles: { fillColor: [13, 18, 32], textColor: [255,255,255], fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [245, 247, 252] },
+      margin: { left: 40, right: 40 }
+    });
+    doc.save((filename || "report") + "_" + new Date().toISOString().slice(0,10) + ".pdf");
+    showToast("✓ PDF downloaded");
+  } catch(e) { showToast("PDF export failed: " + e.message); }
+}
+
+function exportKPIsToPDF(panelId, title, filename) {
+  if (!window.jspdf) { showToast("⚠ PDF library not loaded"); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  doc.setFontSize(15); doc.setFont("helvetica", "bold");
+  doc.text("Best Brain Ltd — " + (title || "Summary"), 40, 44);
+  doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(120);
+  doc.text("Exported: " + new Date().toLocaleString("en-GB"), 40, 60);
+  let y = 80;
+  const panel = document.getElementById(panelId);
+  panel?.querySelectorAll(".kpi-card").forEach(card => {
+    const lbl = card.querySelector(".kpi-label")?.innerText?.trim() || "";
+    const val = card.querySelector(".kpi-value")?.innerText?.trim() || "";
+    const sub = card.querySelector(".kpi-sub")?.innerText?.trim()   || "";
+    doc.setFontSize(9);  doc.setTextColor(100); doc.text(lbl, 40, y);
+    doc.setFontSize(13); doc.setTextColor(30);  doc.setFont("helvetica","bold"); doc.text(val, 40, y+16);
+    doc.setFontSize(8);  doc.setTextColor(150); doc.setFont("helvetica","normal"); doc.text(sub, 40, y+28);
+    y += 48;
+    if (y > 750) { doc.addPage(); y = 40; }
+  });
+  // Also append any table
+  const tbl = panel?.querySelector("table");
+  if (tbl) {
+    const heads = [...tbl.querySelectorAll("thead th")].map(th => th.innerText.trim());
+    const body  = [...tbl.querySelectorAll("tbody tr")].map(tr =>
+      [...tr.querySelectorAll("td")].map(td => td.innerText.trim())
+    );
+    if (heads.length) doc.autoTable({
+      head:[heads], body, startY: y+10,
+      styles:{fontSize:7,cellPadding:3},
+      headStyles:{fillColor:[13,18,32],textColor:[255,255,255]},
+      margin:{left:40,right:40}
+    });
+  }
+  doc.save((filename||"summary") + "_" + new Date().toISOString().slice(0,10) + ".pdf");
+  showToast("✓ PDF downloaded");
+}
 
 /* ══════════════════════════════════════════
    HEALTH MODULE
@@ -8910,10 +9188,7 @@ function buildComplaintsPanel(panel) {
           <option>Urgent</option>
           <option>Critical</option>
         </select>
-        <div class="search-wrap">
-          <span class="s-icon">⌕</span>
-          <input class="search-input" id="cmp-search" placeholder="Search school, ticket…" oninput="filterComplaints()">
-        </div>
+       
       </div>
     </div>
     <div id="cmp-table-wrap"></div>
