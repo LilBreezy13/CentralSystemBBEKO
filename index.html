@@ -1983,7 +1983,7 @@ async function doLogin() {
     };
     errEl.textContent   = friendlyErrors[e.code] || "Sign in failed. Check your credentials.";
     errEl.style.display = "block";
-    loginBtn.textContent = "Sign In →";
+    loginBtn.textContent = "Sign In ";
     loginBtn.disabled    = false;
   }
 }
@@ -4090,6 +4090,7 @@ function filterExams() {
 /* ══════════════════════════════════════════
    SALES MODULE — STATE
 ══════════════════════════════════════════ */
+
 let salesView        = "general";
 let salesRep         = "";
 let salesDistrict    = "";
@@ -9365,3 +9366,4 @@ async function updateComplaintStatus(id) {
 </script>
 </body>
 </html>
+
