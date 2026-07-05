@@ -1096,7 +1096,7 @@ body.light .topbar { background: rgba(240,243,250,.9); }
         </button>
       </div>
     </div>
-    <button class="btn-login" onclick="doLogin()">Sign In →</button>
+    <button class="btn-login" onclick="doLogin()">Sign In </button>
   </div>
 </div>
 
@@ -1951,7 +1951,7 @@ async function doLogin() {
       await window.__bbSignOut(auth);
       errEl.textContent   = "Account not authorised for this dashboard.";
       errEl.style.display = "block";
-      loginBtn.textContent = "Sign In →";
+      loginBtn.textContent = "Sign In ";
       loginBtn.disabled    = false;
       return;
     }
