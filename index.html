@@ -2562,6 +2562,7 @@
           <!-- LOGIN ACTIVITY PANEL -->
           <div class="panel" id="panel-logins"></div>
           <div class="panel" id="panel-complaints"></div>
+          <div class="panel" id="panel-metrics"></div>
         </div>
       </div>
     </div>
@@ -2619,6 +2620,9 @@
           "https://script.google.com/macros/s/AKfycbyLTmD2zgW8EijzWvXwtX7lTUiC_CSSfTn57MvlTkKMqMtcyMhLVNJSSQ1uzMInNnoP/exec",
         SALES_PROXY:
           "https://script.google.com/macros/s/AKfycbyTJhq4vaDk8k_21I6f2d7iTCz2tNSdkRPASYOIQpO_Z9UuOi39qvmdgY61BsqGK959EA/exec",
+        // Deploy the Apps Script proxy (see setup notes) and paste its /exec URL here
+        // to power the "Generate Detailed Report" button on the Metrics tab.
+        METRICS_REPORT_PROXY: "https://script.google.com/macros/s/AKfycbzsTMDXpy7wpaYpjvzAYU9Dm395sd63znVU9-swulI2U2pJmf9asDpMNdmQ5XpC0-7G5g/exec",
         PRODUCTION_SHEET_ID: "1jAzgkn432EiOEw78H25wLIRoqmosfx40vDcX5LcHq1s",
         SALES_SHEET_ID: "1Vg-NikFVSiU_GNOaZedxSXEE1tvMN6KXCwktNxp0DQI",
 
@@ -2688,7 +2692,21 @@
           },
         },
 
-        PRODUCTION_EXAMS: [
+          PRODUCTION_EXAMS: [
+          {
+            id: "mock_sep_2026",
+            label: "SEPTEMBER MOCK - SEPTEMBER 2026",
+            term: "First Term",
+            type: "mock",
+            tabs: {
+              records: "RECORDS SEPTEMBER MOCK - SEPTEMBER 2026",
+              newlate: "NEW-LATE SEPTEMBER MOCK - SEPTEMBER 2026",
+              shortages: "SHORTAGES SEPTEMBER MOCK - SEPTEMBER 2026",
+              charts: "CHARTS SEPTEMBER MOCK - SEPTEMBER 2026",
+              rejected: "REJECTED SEPTEMBER MOCK - SEPTEMBER 2026",
+            },
+          },
+
           {
             id: "terminal_jul_2026",
             label: "JULY TERMINAL - JULY 2026",
@@ -2700,20 +2718,6 @@
               shortages: "SHORTAGES JULY TERMINAL - JULY 2026",
               charts: "CHARTS JULY TERMINAL - JULY 2026",
               rejected: "REJECTED JULY TERMINAL - JULY 2026",
-            },
-          },
-
-          {
-            id: "terminal_dec_2026",
-            label: "DECEMBER TERMINAL - DECEMBER 2026",
-            term: "Second Term",
-            type: "terminal",
-            tabs: {
-              records: "RECORDS DECEMBER TERMINAL - DECEMBER 2026",
-              newlate: "NEW-LATE DECEMBER TERMINAL - DECEMBER 2026",
-              shortages: "SHORTAGES DECEMBER TERMINAL - DECEMBER 2026",
-              charts: "CHARTS DECEMBER TERMINAL - DECEMBER 2026",
-              rejected: "REJECTED JULY TERMINAL - DECEMBER 2026",
             },
           },
         ],
@@ -4024,6 +4028,7 @@
         health: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`,
         logins: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>`,
         complaints: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+        metrics: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
       };
 
       const TAB_CONFIG = [
@@ -4099,13 +4104,23 @@
           staffOnly: false,
           loginsOnly: true,
         },
-        {
+              {
           id: "complaints",
           label: "Complaints",
           dept: "all",
           restricted: false,
           staffOnly: false,
           loginsOnly: false,
+          hidden: true,
+        },
+        {
+          id: "metrics",
+          label: "Metrics & Reports",
+          dept: "all",
+          restricted: false,
+          staffOnly: false,
+          metricsOnly: true,
+          hidden: true,
         },
       ];
       /* ══════════════════════════════════════════
@@ -4418,7 +4433,8 @@
         startRefresh();
       }
 
-      function canSeeTab(tab) {
+        function canSeeTab(tab) {
+        if (tab.hidden) return false;
         const p = PERMISSIONS[currentUser.role];
         if (tab.healthOnly)
           return [
@@ -4428,6 +4444,13 @@
             "chief_director",
           ].includes(currentUser.role);
         if (tab.loginsOnly)
+          return [
+            "superadmin",
+            "general_manager",
+            "managing_director",
+            "chief_director",
+          ].includes(currentUser.role);
+        if (tab.metricsOnly)
           return [
             "superadmin",
             "general_manager",
@@ -4455,7 +4478,8 @@
       function buildNav() {
         const nl = document.getElementById("nav-links");
         nl.innerHTML = `<div class="nav-section-label">Navigation</div>`;
-        TAB_CONFIG.forEach((tab) => {
+               TAB_CONFIG.forEach((tab) => {
+          if (tab.hidden) return; // not ready to show yet
           const visible = canSeeTab(tab);
           const btn = document.createElement("button");
           btn.className = "nav-btn" + (visible ? "" : " locked");
@@ -5201,6 +5225,9 @@
             break;
           case "complaints":
             renderComplaints(panel);
+            break;
+          case "metrics":
+            renderMetrics(panel);
             break;
         }
       }
@@ -14388,6 +14415,402 @@ ${
         } catch (e) {
           showToast("Update failed: " + e.message);
         }
+      }
+
+      /* ══════════════════════════════════════════
+   METRICS & REPORTS  (Super Admin · GM · MD · Chief Director only)
+   Cross-references Registration Portal submissions (liveData.exams)
+   against Exams Office records (salesDataCache / CONFIG.SALES_BRANCHES)
+   rep-by-rep and branch-by-branch, plus revenue/expense inflow totals
+   from the branch journals already used by Finance Summary.
+══════════════════════════════════════════ */
+      let metricsRepData = [];
+      let metricsBranchRollup = [];
+      let metricsTotals = {};
+
+      function computeMetricsData() {
+        const examRows = liveData.exams?.rows || [];
+        const GRADE_COLS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
+
+        // 1) Registration Portal — what reps submitted, grouped by rep
+        const regByRep = {};
+        examRows.forEach((r) => {
+          const rep = (r[2] || "").trim().toUpperCase();
+          if (!rep) return;
+          if (!regByRep[rep]) regByRep[rep] = { schools: 0, cands: 0, bill: 0 };
+          regByRep[rep].schools += 1;
+          regByRep[rep].cands += GRADE_COLS.reduce(
+            (a, i) => a + (parseInt(r[i]) || 0),
+            0,
+          );
+          regByRep[rep].bill +=
+            parseFloat((r[21] || "0").toString().replace(/[^0-9.]/g, "")) || 0;
+        });
+
+        // 2) Exams Office — what was actually recorded, grouped by rep
+        const officeByRep = {};
+        Object.entries(CONFIG.SALES_BRANCHES || {}).forEach(([salesKey]) => {
+          const parsed = salesDataCache[salesKey];
+          (parsed?.repRows || []).forEach((rr) => {
+            const rep = (rr.name || "").trim().toUpperCase();
+            if (!rep) return;
+            officeByRep[rep] = {
+              schools: rr.schools || 0,
+              cands: rr.total || 0,
+              salesKey,
+            };
+          });
+        });
+
+        // 3) Merge rep-by-rep and score the match
+        const allReps = new Set([
+          ...Object.keys(regByRep),
+          ...Object.keys(officeByRep),
+        ]);
+        metricsRepData = [...allReps]
+          .map((rep) => {
+            const reg = regByRep[rep] || { schools: 0, cands: 0, bill: 0 };
+            const off = officeByRep[rep] || { schools: 0, cands: 0 };
+            const branchKey = repBranchKey(rep);
+            const branchLabel = branchKey
+              ? BRANCHES[branchKey]?.short
+              : off.salesKey
+                ? CONFIG.SALES_BRANCHES[off.salesKey]?.label
+                : "Unassigned";
+            const hi = Math.max(reg.schools, off.schools);
+            const lo = Math.min(reg.schools, off.schools);
+            const matchPct = hi === 0 ? 100 : Math.round((lo / hi) * 1000) / 10;
+            return {
+              rep,
+              branch: branchLabel || "Unassigned",
+              regSchools: reg.schools,
+              offSchools: off.schools,
+              variance: reg.schools - off.schools,
+              regCands: reg.cands,
+              bill: reg.bill,
+              matchPct,
+            };
+          })
+          .sort((a, b) => a.matchPct - b.matchPct);
+
+        // 4) Branch-by-branch roll-up
+        const bMap = {};
+        metricsRepData.forEach((m) => {
+          if (!bMap[m.branch])
+            bMap[m.branch] = { branch: m.branch, reg: 0, off: 0, bill: 0, reps: 0 };
+          bMap[m.branch].reg += m.regSchools;
+          bMap[m.branch].off += m.offSchools;
+          bMap[m.branch].bill += m.bill;
+          bMap[m.branch].reps += 1;
+        });
+        metricsBranchRollup = Object.values(bMap).map((b) => ({
+          ...b,
+          matchPct:
+            Math.max(b.reg, b.off) === 0
+              ? 100
+              : Math.round((Math.min(b.reg, b.off) / Math.max(b.reg, b.off)) * 1000) /
+                10,
+        }));
+
+        // 5) Revenue / expenses — same source as Finance Summary (branch journals)
+        const finLinkedKeys = Object.keys(BRANCHES).filter((k) => {
+          const b = BRANCHES[k];
+          return (
+            b.active &&
+            b.journalSheetId &&
+            !b.journalSheetId.startsWith("PASTE_") &&
+            !b.journalSheetId.startsWith("YOUR_")
+          );
+        });
+        const finAllRows = finLinkedKeys.flatMap(
+          (k) => allBranchJournals[k]?.rows || [],
+        );
+        const totalRevenue = finAllRows.reduce((s, r) => {
+          const v = parseFloat(r[5]);
+          return s + (isNaN(v) ? 0 : v);
+        }, 0);
+        const totalExpenses = finAllRows.reduce((s, r) => {
+          const v = parseFloat(r[6]);
+          return s + (isNaN(v) ? 0 : v);
+        }, 0);
+        const totalBill = metricsRepData.reduce((s, m) => s + m.bill, 0);
+        const discrepantReps = metricsRepData.filter(
+          (m) => m.variance !== 0,
+        ).length;
+        const avgMatch = metricsRepData.length
+          ? Math.round(
+              (metricsRepData.reduce((s, m) => s + m.matchPct, 0) /
+                metricsRepData.length) *
+                10,
+            ) / 10
+          : 100;
+
+        metricsTotals = {
+          repsTracked: metricsRepData.length,
+          discrepantReps,
+          avgMatch,
+          totalRevenue,
+          totalExpenses,
+          netBalance: totalRevenue - totalExpenses,
+          totalBill,
+        };
+      }
+
+      function renderMetrics(panel) {
+        const allowedRoles = [
+          "superadmin",
+          "general_manager",
+          "managing_director",
+          "chief_director",
+        ];
+        if (!allowedRoles.includes(currentUser.role)) {
+          panel.innerHTML = `<div class="restricted-wrap"><div class="restricted-icon">⛔</div><h3>Access Restricted</h3><p>Metrics & Reports is available to Super Admin, Managing Director, Chief Director and General Manager only.</p></div>`;
+          return;
+        }
+        if (!liveData.exams) {
+          panel.innerHTML = loading();
+          return;
+        }
+
+        computeMetricsData();
+        const t = metricsTotals;
+        const branchOptions = [...new Set(metricsRepData.map((m) => m.branch))]
+          .filter(Boolean)
+          .sort();
+
+        panel.innerHTML = `
+    <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">
+      <div class="kpi-card blue"><div class="kpi-glow"></div>
+        <div class="kpi-label">Reps Tracked</div>
+        <div class="kpi-value">${t.repsTracked}</div>
+        <div class="kpi-sub">Registration Portal + Exams Office</div>
+        <div class="kpi-icon"></div>
+      </div>
+      <div class="kpi-card ${t.avgMatch >= 90 ? "green" : t.avgMatch >= 70 ? "amber" : "red"}"><div class="kpi-glow"></div>
+        <div class="kpi-label">Avg. Data Match Rate</div>
+        <div class="kpi-value">${t.avgMatch}%</div>
+        <div class="kpi-sub">Portal submissions vs Exams Office</div>
+        <div class="kpi-icon"></div>
+      </div>
+      <div class="kpi-card ${t.discrepantReps === 0 ? "green" : "orange"}"><div class="kpi-glow"></div>
+        <div class="kpi-label">Reps With Discrepancies</div>
+        <div class="kpi-value">${t.discrepantReps}</div>
+        <div class="kpi-sub">Portal count ≠ Exams Office count</div>
+        <div class="kpi-icon"></div>
+      </div>
+      <div class="kpi-card teal"><div class="kpi-glow"></div>
+        <div class="kpi-label">Total Registration Bill</div>
+        <div class="kpi-value">${ghs(t.totalBill)}</div>
+        <div class="kpi-sub">Sum across all reps</div>
+        <div class="kpi-icon"></div>
+      </div>
+      <div class="kpi-card green"><div class="kpi-glow"></div>
+        <div class="kpi-label">Total Revenue (Inflows)</div>
+        <div class="kpi-value">${ghs(t.totalRevenue)}</div>
+        <div class="kpi-sub">All linked branch journals</div>
+        <div class="kpi-icon"></div>
+      </div>
+      <div class="kpi-card red"><div class="kpi-glow"></div>
+        <div class="kpi-label">Total Expenses (Outflows)</div>
+        <div class="kpi-value">${ghs(t.totalExpenses)}</div>
+        <div class="kpi-sub">All linked branch journals</div>
+        <div class="kpi-icon"></div>
+      </div>
+      <div class="kpi-card ${t.netBalance >= 0 ? "teal" : "red"}"><div class="kpi-glow"></div>
+        <div class="kpi-label">Net Balance</div>
+        <div class="kpi-value">${ghs(t.netBalance)}</div>
+        <div class="kpi-sub">Revenue − Expenses</div>
+        <div class="kpi-icon"></div>
+      </div>
+      <div class="kpi-card purple"><div class="kpi-glow"></div>
+        <div class="kpi-label">Branches Compared</div>
+        <div class="kpi-value">${metricsBranchRollup.length}</div>
+        <div class="kpi-sub">Rolled up from rep data</div>
+        <div class="kpi-icon"></div>
+      </div>
+    </div>
+
+    <div class="sh" style="margin-bottom:0">
+      <div class="sh-left">
+        <div class="sh-title">Branch-by-Branch Summary</div>
+        <span class="sh-count">${metricsBranchRollup.length} branches</span>
+      </div>
+    </div>
+    <div class="table-wrap scroll" style="border-radius:0;margin-bottom:20px">
+      <table>
+        <thead><tr><th>Branch</th><th>Reps</th><th>Registration Portal (Schools)</th><th>Exams Office (Schools)</th><th>Match %</th><th>Total Bill</th></tr></thead>
+        <tbody>
+          ${
+            metricsBranchRollup.length
+              ? metricsBranchRollup
+                  .map(
+                    (b) => `<tr>
+              <td style="font-weight:600">${b.branch}</td>
+              <td>${b.reps}</td>
+              <td>${b.reg.toLocaleString()}</td>
+              <td>${b.off.toLocaleString()}</td>
+              <td><span class="badge ${b.matchPct >= 90 ? "badge-green" : b.matchPct >= 70 ? "badge-amber" : "badge-red"}">${b.matchPct}%</span></td>
+              <td>${ghs(b.bill)}</td>
+            </tr>`,
+                  )
+                  .join("")
+              : `<tr class="empty-row"><td colspan="6">No branch data available yet.</td></tr>`
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="sh">
+      <div class="sh-left">
+        <div class="sh-title">Rep-by-Rep Metrics</div>
+        <span class="sh-count" id="metrics-rep-count">${metricsRepData.length} reps</span>
+      </div>
+      <div class="sh-right">
+        <select class="filter-select" id="metrics-branch-filter" onchange="filterMetricsTable()">
+          <option value="">All Branches</option>
+          ${branchOptions.map((b) => `<option value="${b}">${b}</option>`).join("")}
+        </select>
+        <div class="search-wrap"><span class="s-icon">⌕</span>
+          <input class="search-input" id="metrics-search" placeholder="Search rep…" oninput="filterMetricsTable()">
+        </div>
+        <button class="btn-export btn-export-excel" onclick="exportTableToExcel('metrics-table-wrap','Rep_Metrics')">⬇ Excel</button>
+        <button class="btn-export btn-export-pdf" onclick="exportTableToPDF('metrics-table-wrap','Rep-by-Rep Metrics','Rep_Metrics')">⬇ PDF</button>
+        <button class="btn-print" onclick="printPanel('Rep-by-Rep Metrics')">⎙ Print</button>
+        <button class="btn-print" id="metrics-report-btn" style="background:var(--accent);color:#fff;border-color:var(--accent)" onclick="generateMetricsReport()">✨ Generate Detailed Report</button>
+      </div>
+    </div>
+    <div id="metrics-table-wrap"></div>
+    <div id="metrics-modal-root"></div>`;
+
+        renderMetricsTable(metricsRepData);
+      }
+
+      function renderMetricsTable(rows) {
+        const wrap = document.getElementById("metrics-table-wrap");
+        if (!wrap) return;
+        if (!rows.length) {
+          wrap.innerHTML = `<div class="table-wrap scroll" style="border-radius:0 0 var(--r-lg) var(--r-lg)"><table><tbody><tr class="empty-row"><td colspan="7">No matching reps found.</td></tr></tbody></table></div>`;
+          return;
+        }
+        wrap.innerHTML = `<div class="table-wrap scroll" style="border-radius:0 0 var(--r-lg) var(--r-lg)">
+      <table>
+        <thead><tr><th>Rep</th><th>Branch</th><th>Registration Portal</th><th>Exams Office</th><th>Variance</th><th>Match %</th><th>Bill</th></tr></thead>
+        <tbody>
+          ${rows
+            .map(
+              (m) => `<tr>
+            <td style="font-weight:600">${m.rep}</td>
+            <td>${m.branch}</td>
+            <td>${m.regSchools}</td>
+            <td>${m.offSchools}</td>
+            <td style="color:${m.variance === 0 ? "var(--text2)" : m.variance > 0 ? "var(--amber)" : "var(--red)"}">${m.variance > 0 ? "+" : ""}${m.variance}</td>
+            <td><span class="badge ${m.matchPct >= 90 ? "badge-green" : m.matchPct >= 70 ? "badge-amber" : "badge-red"}">${m.matchPct}%</span></td>
+            <td>${ghs(m.bill)}</td>
+          </tr>`,
+            )
+            .join("")}
+        </tbody>
+      </table>
+    </div>`;
+      }
+
+      function filterMetricsTable() {
+        const branch = document.getElementById("metrics-branch-filter")?.value || "";
+        const q = (document.getElementById("metrics-search")?.value || "")
+          .trim()
+          .toUpperCase();
+        const filtered = metricsRepData.filter((m) => {
+          if (branch && m.branch !== branch) return false;
+          if (q && !m.rep.includes(q)) return false;
+          return true;
+        });
+        document.getElementById("metrics-rep-count").textContent =
+          filtered.length + " reps";
+        renderMetricsTable(filtered);
+      }
+
+      /* ── AI-generated detailed report ──
+   Sends the computed metrics JSON to a small server-side proxy
+   (same pattern as SECRETARY_PROXY / EXAMS_PROXY / SALES_PROXY) which
+   calls the Anthropic API with a securely stored key and returns text.
+   Set CONFIG.METRICS_REPORT_PROXY to your deployed proxy URL. */
+      async function generateMetricsReport() {
+        const btn = document.getElementById("metrics-report-btn");
+        const proxyUrl = CONFIG.METRICS_REPORT_PROXY;
+        if (!proxyUrl || proxyUrl.includes("YOUR_") || proxyUrl.trim() === "") {
+          showToast(
+            "Report proxy not configured — set CONFIG.METRICS_REPORT_PROXY",
+          );
+          return;
+        }
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = "Generating…";
+        }
+        try {
+          const payload = {
+            generatedAt: new Date().toISOString(),
+            generatedBy: currentUser?.name || "Unknown",
+            totals: metricsTotals,
+            byBranch: metricsBranchRollup,
+            byRep: metricsRepData,
+          };
+          const res = await fetch(proxyUrl, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify(payload),
+          });
+          const json = await res.json();
+          if (json.error) throw new Error(json.error);
+          openMetricsReportModal(json.report || "No report returned.");
+        } catch (e) {
+          console.error("Metrics report error:", e);
+          showToast("Could not generate report: " + e.message);
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = "✨ Generate Detailed Report";
+          }
+        }
+      }
+
+      function escapeHtmlMetrics(s) {
+        return (s || "")
+          .toString()
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      function openMetricsReportModal(text) {
+        const root = document.getElementById("metrics-modal-root");
+        if (!root) return;
+        const body = text
+          .split(/\n{2,}/)
+          .map(
+            (p) =>
+              `<p style="margin-bottom:12px;line-height:1.7;color:var(--text);font-size:13.5px">${escapeHtmlMetrics(p).replace(/\n/g, "<br>")}</p>`,
+          )
+          .join("");
+        root.innerHTML = `
+    <div style="position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.6);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;padding:20px" onclick="closeMetricsModal(event)">
+      <div style="background:var(--bg1);border:1px solid var(--border);border-radius:var(--r-xl);width:100%;max-width:720px;max-height:88vh;overflow-y:auto;box-shadow:0 40px 80px rgba(0,0,0,.4)" onclick="event.stopPropagation()">
+        <div style="padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;background:var(--bg1)">
+          <div>
+            <div style="font-size:17px;font-weight:700;font-family:var(--font-display)">AI Metrics Report</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:3px">Generated ${new Date().toLocaleString("en-GB")} · ${currentUser?.name || ""}</div>
+          </div>
+          <button class="btn-print" onclick="closeMetricsModal()">Close</button>
+        </div>
+        <div style="padding:24px" id="metrics-report-body">${body}</div>
+      </div>
+    </div>`;
+      }
+
+      function closeMetricsModal(e) {
+        if (e && e.target !== e.currentTarget) return;
+        const root = document.getElementById("metrics-modal-root");
+        if (root) root.innerHTML = "";
       }
     </script>
   </body>
