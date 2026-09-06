@@ -2599,11 +2599,11 @@
         GOOGLE_API_KEY: "AIzaSyBHOjTsT3bK3F-0tq99vhS_itfNCbS1xRc",
         REFRESH_INTERVAL: 30000,
         COMPANY_NAME: "Best Brain Ltd",
-        SHEETS: {
+              SHEETS: {
           secretaries: "1341Pr7AlXwxBqjA3sJAmltm-kWL3HP0OV4nwGuSxEY0",
           production: "1jAzgkn432EiOEw78H25wLIRoqmosfx40vDcX5LcHq1s",
           exams: "19UuNKsI26DqtDJVE-xwIbwlHVVp1EhP7cQxbESDsRvA",
-          sales: "YOUR_SALES_SHEET_ID",
+          sales: "17otwSt-AccsatYAv8aeZA9a91672Vq4NL_PbNzaG7mY",
           debt: "YOUR_DEBT_OFFICE_SHEET_ID",
         },
         SHEET_TABS: {
@@ -2619,17 +2619,17 @@
         EXAMS_PROXY:
           "https://script.google.com/macros/s/AKfycbyLTmD2zgW8EijzWvXwtX7lTUiC_CSSfTn57MvlTkKMqMtcyMhLVNJSSQ1uzMInNnoP/exec",
         SALES_PROXY:
-          "https://script.google.com/macros/s/AKfycbyTJhq4vaDk8k_21I6f2d7iTCz2tNSdkRPASYOIQpO_Z9UuOi39qvmdgY61BsqGK959EA/exec",
+          "https://script.google.com/macros/s/AKfycbxz8g4Vmb72tLHOxDhgZENtUZhCulJ42ED-qodoOLKm_OycCBRfHk0wmVVcroEB1b6hUw/exec",
         // Deploy the Apps Script proxy (see setup notes) and paste its /exec URL here
         // to power the "Generate Detailed Report" button on the Metrics tab.
         METRICS_REPORT_PROXY: "https://script.google.com/macros/s/AKfycbzsTMDXpy7wpaYpjvzAYU9Dm395sd63znVU9-swulI2U2pJmf9asDpMNdmQ5XpC0-7G5g/exec",
         PRODUCTION_SHEET_ID: "1jAzgkn432EiOEw78H25wLIRoqmosfx40vDcX5LcHq1s",
-        SALES_SHEET_ID: "1Vg-NikFVSiU_GNOaZedxSXEE1tvMN6KXCwktNxp0DQI",
+             SALES_SHEET_ID: "17otwSt-AccsatYAv8aeZA9a91672Vq4NL_PbNzaG7mY",
 
         SALES_BRANCHES: {
           "G-GHANA": {
             label: "Greater Ghana",
-            sheetName: "G-GHAANA",
+            sheetName: "G. GHANA",
             color: "#3d9cf5",
             reps: [
               { name: "TURKSON", sheet: "TURKSON" },
@@ -2657,7 +2657,7 @@
           },
           "U-GHANA": {
             label: "Upper Ghana",
-            sheetName: "U-GHANA",
+            sheetName: "U. GHANA",
             color: "#00e5a0",
             reps: [
               { name: "PRISCILA", sheet: "PRISCILA" },
@@ -2677,7 +2677,7 @@
               { name: "MIKE", sheet: "MIKE" },
             ],
           },
-          "C-GHANA": {
+              "C-GHANA": {
             label: "Central Ghana",
             sheetName: "C-GHANA",
             color: "#ffb830",
@@ -2688,6 +2688,19 @@
               { name: "AIKINS", sheet: "AIKINS" },
               { name: "NADIA", sheet: "NADIA" },
               { name: "MAXWELL", sheet: "MAXWELL" },
+            ],
+          },
+          "N-GHANA": {
+            label: "Northern Ghana",
+            sheetName: "N. GHANA",
+            color: "#a78bfa",
+            reps: [
+             //  { name: "REP_NAME", sheet: "REP_SHEET_TAB" },
+               { name: "ABDUL", sheet: "ABDUL" },
+               { name: "ALBERT", sheet: "ALBERT" },
+               { name: "DRAMANI", sheet: "DRAMANI" },
+               { name: "IBRAHIM", sheet: "IBRAHIM" },
+               { name: "SANDRA", sheet: "SANDRA" },
             ],
           },
         },
@@ -2749,7 +2762,7 @@
             "https://script.google.com/macros/s/YOUR_UPPER_HEALTH_PROXY/exec",
           active: true,
         },
-        central: {
+             central: {
           label: "Central Ghana Branch",
           short: "Central Ghana",
           color: "#ffb830",
@@ -2762,19 +2775,34 @@
             "https://script.google.com/macros/s/YOUR_CENTRAL_HEALTH_PROXY/exec",
           active: true,
         },
+        northern: {
+          label: "Northern Ghana Branch",
+          short: "Northern Ghana",
+          color: "#a78bfa",
+          journalSheetId: "",
+          journalTab: "JOURNAL ",
+          proxyUrl:
+            "",
+
+          healthProxyUrl:
+            "",
+          active: true,
+        },
       };
       let currentBranch = "general";
 
       // Maps a BRANCHES key to the equivalent key/label used by each tab's own filter
-      const BRANCH_LINK = {
+          const BRANCH_LINK = {
         greater: { sales: "G-GHANA", staff: "Greater Ghana" },
         upper: { sales: "U-GHANA", staff: "Upper Ghana" },
         central: { sales: "C-GHANA", staff: "Central Ghana" },
+        northern: { sales: "N-GHANA", staff: "Northern Ghana" },
       };
       const SALES_TO_BRANCH = {
         "G-GHANA": "greater",
         "U-GHANA": "upper",
         "C-GHANA": "central",
+        "N-GHANA": "northern",
       };
       // Looks up which branch a sales rep belongs to, from CONFIG.SALES_BRANCHES — used by Debt Office
       function repBranchKey(repName) {
@@ -6989,13 +7017,17 @@ ${
           0,
         );
       }
-      // Map REGION → branch key  (loose match)
+        // Map REGION → branch key  (loose match)
       function examBranchKey(region) {
         const r = (region || "").toUpperCase();
         if (
-          r.includes("UPPER") ||
           r.includes("NORTHERN") ||
           r.includes("SAVANNAH") ||
+          r.includes("UPPER EAST") ||
+          r.includes("UPPER WEST")
+        )
+          return "northern";
+        if (
           r.includes("BONO") ||
           r.includes("AHAFO") ||
           r.includes("BRONG")
@@ -7597,218 +7629,89 @@ ${
         }
       }
 
-      /* ── Parse branch summary sheet (G-GHAANA / U-GHANA / C-GHANA) ── */
+      /* ── Parse branch summary sheet (G. GHANA / U. GHANA / C-GHANA / N. GHANA) ── */
       function parseBranchSummary(raw) {
         if (!raw || !raw.rows || !raw.rows.length) return null;
         const rows = raw.rows;
 
-        // KPI rows — the proxy returns all rows; we look for the summary text in col[1]
-        let individSchools = 0,
-          distSchools = 0,
-          totalSchools = 0,
-          optionATotal = 0;
-        let repRows = [],
-          distRows = [],
-          inDistSection = false;
-        let inRepSection = false;
-
+        let repRows = [];
         rows.forEach((r) => {
-          const c1 = (r[1] || "").toString().trim().toUpperCase();
-          const c3 = (r[3] || "").toString().trim().toUpperCase();
+          const name = (r[1] || "").toString().trim();
+          if (!name || name.toUpperCase() === "NAME OF MARKETER") return;
+          if (r[2] === undefined || r[2] === null || r[2] === "") return;
 
-          // KPI rows (proxy returns them as the row data)
-          if (c1.includes("TOTAL") && c3.includes("INDIVIDUAL")) {
-            individSchools =
-              parseInt(
-                (r[20] || r[21] || 0).toString().replace(/[^0-9]/g, ""),
-              ) || 0;
-          }
-          if (c1.includes("TOTAL") && c3.includes("DISTRICTS")) {
-            distSchools =
-              parseInt(
-                (r[20] || r[21] || 0).toString().replace(/[^0-9]/g, ""),
-              ) || 0;
-          }
-          if (c1.includes("GRAND TOTAL")) {
-            totalSchools =
-              parseInt(
-                (r[20] || r[21] || 0).toString().replace(/[^0-9]/g, ""),
-              ) || 0;
-          }
-          // Option A: check col 19 in a summary row — pick from individual row
-          if (
-            c1.includes("TOTAL") &&
-            c3.includes("INDIVIDUAL") &&
-            r[19] !== undefined
-          ) {
-            optionATotal =
-              parseInt((r[19] || 0).toString().replace(/[^0-9]/g, "")) || 0;
-          }
+          const schools = parseInt((r[2] || 0).toString().replace(/[^0-9]/g, "")) || 0;
+          const enrolment = parseInt((r[3] || 0).toString().replace(/[^0-9]/g, "")) || 0;
+          const due = parseInt((r[4] || 0).toString().replace(/[^0-9]/g, "")) || 0;
+          const collected = parseInt((r[5] || 0).toString().replace(/[^0-9]/g, "")) || 0;
+          const balance = parseInt((r[6] || 0).toString().replace(/[^0-9]/g, "")) || 0;
 
-          // Detect district section marker (same logic as parseStatistics)
-          if (
-            (c1 === "DISTRICTS" ||
-              c1 === "DISTRICT" ||
-              (c1.includes("DISTRICT") && !r[2])) &&
-            !r[2]
-          ) {
-            inDistSection = true;
-            return;
-          }
-
-          // Rep data rows: col[1] is a number (S/N), col[2] is a name
-          const sn = parseInt(r[1]);
-          const name = (r[2] || "").toString().trim();
-          if (
-            !isNaN(sn) &&
-            sn > 0 &&
-            name &&
-            name !== "S/N" &&
-            name !== "NAME OF MARKETER"
-          ) {
-            const schools =
-              parseInt((r[4] || 0).toString().replace(/[^0-9]/g, "")) || 0;
-            const grades = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].map(
-              (ci) =>
-                parseInt((r[ci] || 0).toString().replace(/[^0-9]/g, "")) || 0,
-            );
-            const optA =
-              parseInt((r[18] || 0).toString().replace(/[^0-9]/g, "")) || 0;
-            const total = grades.reduce((s, v) => s + v, 0);
-            if (inDistSection) {
-              distRows.push({
-                sn,
-                name,
-                schools,
-                grades,
-                optionA: optA,
-                total,
-              });
-            } else {
-              repRows.push({ sn, name, schools, grades, optionA: optA, total });
-            }
-          }
+          repRows.push({
+            sn: repRows.length + 1,
+            name,
+            schools,
+            grades: new Array(SALES_GRADE_LABELS.length).fill(0),
+            optionA: 0,
+            total: enrolment,
+            due,
+            collected,
+            balance,
+          });
         });
 
-        // Fallback: compute totals from rep rows if KPIs missing
-        if (!totalSchools && repRows.length) {
-          totalSchools = repRows.reduce((s, r) => s + r.schools, 0);
-          individSchools = totalSchools;
-        }
-        if (!optionATotal) {
-          optionATotal = repRows.reduce((s, r) => s + r.optionA, 0);
-        }
+        const totalSchools = repRows.reduce((s, r) => s + r.schools, 0);
 
         return {
-          individSchools,
-          distSchools,
+          individSchools: totalSchools,
+          distSchools: 0,
           totalSchools,
-          optionATotal,
+          optionATotal: 0,
           repRows,
-          distRows,
+          distRows: [],
         };
       }
-
       /* ── Parse STATISTICS sheet (general view) ── */
       function parseStatistics(raw) {
         if (!raw || !raw.rows || !raw.rows.length) return null;
         const rows = raw.rows;
 
-        let individSchools = 0,
-          distSchools = 0,
-          totalSchools = 0,
-          optionATotal = 0;
-        let repRows = [],
-          distRows = [],
-          inDistSection = false;
-
+        let repRows = [];
         rows.forEach((r) => {
-          const c1 = (r[1] || "").toString().trim().toUpperCase();
-          const c3 = (r[3] || "").toString().trim().toUpperCase();
+          const name = (r[1] || "").toString().trim();
+          if (!name || name.toUpperCase() === "NAME OF MARKETER") return;
+          if (r[2] === undefined || r[2] === null || r[2] === "") return;
 
-          if (c1.includes("TOTAL") && c3.includes("INDIVIDUAL")) {
-            individSchools =
-              parseInt(
-                (r[20] || r[21] || 0).toString().replace(/[^0-9]/g, ""),
-              ) || 0;
-            optionATotal =
-              parseInt((r[19] || 0).toString().replace(/[^0-9]/g, "")) || 0;
-          }
-          if (c1.includes("TOTAL") && c3.includes("DISTRICTS")) {
-            distSchools =
-              parseInt(
-                (r[20] || r[21] || 0).toString().replace(/[^0-9]/g, ""),
-              ) || 0;
-          }
-          if (c1.includes("GRAND TOTAL")) {
-            totalSchools =
-              parseInt(
-                (r[20] || r[21] || 0).toString().replace(/[^0-9]/g, ""),
-              ) || 0;
-          }
+          const schools = parseInt((r[2] || 0).toString().replace(/[^0-9]/g, "")) || 0;
+          const enrolment = parseInt((r[3] || 0).toString().replace(/[^0-9]/g, "")) || 0;
+          const due = parseInt((r[4] || 0).toString().replace(/[^0-9]/g, "")) || 0;
+          const collected = parseInt((r[5] || 0).toString().replace(/[^0-9]/g, "")) || 0;
+          const balance = parseInt((r[6] || 0).toString().replace(/[^0-9]/g, "")) || 0;
 
-          // District section marker
-          if (
-            (c1 === "DISTRICTS" ||
-              c1 === "DISTRICT" ||
-              (c1.includes("DISTRICT") && !r[2])) &&
-            !r[2]
-          ) {
-            inDistSection = true;
-            return;
-          }
-
-          const sn = parseInt(r[1]);
-          const name = (r[2] || "").toString().trim();
-          if (
-            !isNaN(sn) &&
-            sn > 0 &&
-            name &&
-            name !== "S/N" &&
-            name !== "NAME OF MARKETER"
-          ) {
-            const schools =
-              parseInt((r[4] || 0).toString().replace(/[^0-9]/g, "")) || 0;
-            const grades = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].map(
-              (ci) =>
-                parseInt((r[ci] || 0).toString().replace(/[^0-9]/g, "")) || 0,
-            );
-            const optA =
-              parseInt((r[18] || 0).toString().replace(/[^0-9]/g, "")) || 0;
-            const total = grades.reduce((s, v) => s + v, 0);
-            if (inDistSection) {
-              distRows.push({
-                sn,
-                name,
-                schools,
-                grades,
-                optionA: optA,
-                total,
-              });
-            } else {
-              repRows.push({ sn, name, schools, grades, optionA: optA, total });
-            }
-          }
+          repRows.push({
+            sn: repRows.length + 1,
+            name,
+            schools,
+            grades: new Array(SALES_GRADE_LABELS.length).fill(0),
+            optionA: 0,
+            total: enrolment,
+            due,
+            collected,
+            balance,
+          });
         });
 
-        if (!totalSchools && repRows.length) {
-          totalSchools = repRows.reduce((s, r) => s + r.schools, 0);
-          individSchools = totalSchools;
-        }
-        if (!optionATotal)
-          optionATotal = repRows.reduce((s, r) => s + r.optionA, 0);
+        const totalSchools = repRows.reduce((s, r) => s + r.schools, 0);
 
         return {
-          individSchools,
-          distSchools,
+          individSchools: totalSchools,
+          distSchools: 0,
           totalSchools,
-          optionATotal,
+          optionATotal: 0,
           repRows,
-          distRows,
+          distRows: [],
         };
       }
-
-      /* ── Parse individual rep sheet (schools data) ── */
+        /* ── Parse individual rep sheet (schools data) ── */
       function parseRepSheet(raw) {
         if (!raw || !raw.rows || !raw.rows.length) return null;
         const rows = raw.rows;
@@ -7816,14 +7719,14 @@ ${
         // Find header row (contains "NAME OF SCHOOL")
         let headerIdx = -1;
         rows.forEach((r, i) => {
-          if ((r[2] || "").toString().toUpperCase().includes("NAME OF SCHOOL"))
+          if ((r[3] || "").toString().toUpperCase().includes("NAME OF SCHOOL"))
             headerIdx = i;
         });
         if (headerIdx < 0) headerIdx = 3;
 
         const dataRows = rows.slice(headerIdx + 1).filter((r) => {
           const sn = parseInt(r[1]);
-          const name = (r[2] || "").toString().trim();
+          const name = (r[3] || "").toString().trim();
           return (
             !isNaN(sn) &&
             sn > 0 &&
@@ -7833,25 +7736,25 @@ ${
         });
 
         return dataRows.map((r) => {
-          const grades = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].map(
-            (ci) =>
-              parseInt((r[ci] || 0).toString().replace(/[^0-9]/g, "")) || 0,
-          );
-          const bill =
-            parseInt((r[21] || 0).toString().replace(/[^0-9]/g, "")) || 0;
-          let phone = (r[4] || "").toString().replace(/\.0$/, "");
+          const enrolment = parseInt((r[6] || 0).toString().replace(/[^0-9]/g, "")) || 0;
+          const bill = parseInt((r[10] || 0).toString().replace(/[^0-9]/g, "")) || 0;
+          const collected = parseInt((r[11] || 0).toString().replace(/[^0-9]/g, "")) || 0;
+          const balance = parseInt((r[12] || 0).toString().replace(/[^0-9]/g, "")) || 0;
+          let phone = (r[5] || "").toString().replace(/\.0$/, "");
           if (/^\d{9}$/.test(phone)) phone = "0" + phone;
           return {
             sn: parseInt(r[1]),
-            school: (r[2] || "").toString().trim(),
-            location: (r[3] || "").toString().trim(),
+            school: (r[3] || "").toString().trim(),
+            location: (r[4] || "").toString().trim(),
             contact: phone,
-            grades,
-            optionA: (r[17] || "").toString().trim(),
-            lang: (r[18] || "").toString().trim(),
-            french: (r[19] || "").toString().trim(),
+            grades: new Array(SALES_GRADE_LABELS.length).fill(0),
+            optionA: (r[7] || "").toString().trim(),
+            lang: (r[8] || "").toString().trim(),
+            french: (r[9] || "").toString().trim(),
             bill,
-            total: grades.reduce((s, v) => s + v, 0),
+            collected,
+            balance,
+            total: enrolment,
           };
         });
       }
@@ -8478,18 +8381,17 @@ ${
         // Background loading is now handled by loadAllRepSheetsInBackground()
         // called from renderSales / switchSalesView — no duplicate call here
       }
-
       function buildSchoolTbody(schools, bCfg) {
         if (!schools || !schools.length) {
-          return `<tr><td colspan="${4 + SALES_GRADE_LABELS.length + 2}"
+          return `<tr><td colspan="11"
       style="text-align:center;padding:32px;color:var(--text2);font-size:13px">
       No school data available — check proxy.
     </td></tr>`;
         }
+        const totalEnrol = schools.reduce((s, r) => s + (r.total || 0), 0);
         const totalBill = schools.reduce((s, r) => s + r.bill, 0);
-        const gradeTots = SALES_GRADE_LABELS.map((_, gi) =>
-          schools.reduce((s, r) => s + (r.grades[gi] || 0), 0),
-        );
+        const totalAmt = schools.reduce((s, r) => s + (r.collected || 0), 0);
+        const totalBal = schools.reduce((s, r) => s + (r.balance || 0), 0);
         return (
           schools
             .map(
@@ -8500,13 +8402,20 @@ ${
       title="${r.school.replace(/"/g, "&quot;")}">${r.school}</td>
     <td style="font-size:12px;color:var(--text2);white-space:nowrap">${r.location || "—"}</td>
     <td style="font-family:var(--font-mono);font-size:11px;color:var(--text2);white-space:nowrap">${r.contact || "—"}</td>
-    ${r.grades.map((v) => `<td style="text-align:center;font-family:var(--font-mono);font-size:12px;color:${v > 0 ? "var(--text)" : "var(--text3)"}">${v > 0 ? v : "—"}</td>`).join("")}
+    <td style="text-align:center;font-family:var(--font-mono);font-size:12px;color:${r.total > 0 ? "var(--text)" : "var(--text3)"}">${r.total > 0 ? r.total.toLocaleString() : "—"}</td>
+    <td style="text-align:center;font-size:11px;color:var(--text2)">${r.optionA || "—"}</td>
     <td style="text-align:center;font-size:11px;color:var(--text2)">${r.lang || "—"}</td>
     <td style="text-align:center">
       <span class="${(r.french || "").toUpperCase() === "YES" ? "badge badge-green" : "badge badge-amber"}" style="font-size:10px">${r.french || "—"}</span>
     </td>
-    <td style="text-align:right;font-family:var(--font-mono);font-weight:600;color:${r.bill > 0 ? "var(--green)" : "var(--text3)"}">
+    <td style="text-align:right;font-family:var(--font-mono);font-weight:600;color:${r.bill > 0 ? "var(--text)" : "var(--text3)"}">
       ${r.bill > 0 ? r.bill.toLocaleString() : "—"}
+    </td>
+    <td style="text-align:right;font-family:var(--font-mono);font-weight:600;color:${r.collected > 0 ? "var(--green)" : "var(--text3)"}">
+      ${r.collected > 0 ? r.collected.toLocaleString() : "—"}
+    </td>
+    <td style="text-align:right;font-family:var(--font-mono);font-weight:600;color:${r.balance > 0 ? "var(--red)" : "var(--text3)"}">
+      ${r.balance > 0 ? r.balance.toLocaleString() : "—"}
     </td>
   </tr>`,
             )
@@ -8516,9 +8425,12 @@ ${
     <td></td>
     <td style="font-family:var(--font-display);font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em">TOTALS</td>
     <td colspan="2"></td>
-    ${gradeTots.map((v) => `<td style="text-align:center;font-family:var(--font-mono);font-weight:700;color:var(--blue);font-size:12px">${v > 0 ? v.toLocaleString() : ""}</td>`).join("")}
+    <td style="text-align:center;font-family:var(--font-mono);font-weight:700;color:var(--blue);font-size:12px">${totalEnrol > 0 ? totalEnrol.toLocaleString() : ""}</td>
     <td colspan="2"></td>
-    <td style="text-align:right;font-family:var(--font-mono);font-weight:800;color:var(--green)">${totalBill > 0 ? totalBill.toLocaleString() : "—"}</td>
+    <td></td>
+    <td style="text-align:right;font-family:var(--font-mono);font-weight:800;color:var(--text)">${totalBill > 0 ? totalBill.toLocaleString() : "—"}</td>
+    <td style="text-align:right;font-family:var(--font-mono);font-weight:800;color:var(--green)">${totalAmt > 0 ? totalAmt.toLocaleString() : "—"}</td>
+    <td style="text-align:right;font-family:var(--font-mono);font-weight:800;color:var(--red)">${totalBal > 0 ? totalBal.toLocaleString() : "—"}</td>
   </tr>`
         );
       }
@@ -8631,7 +8543,7 @@ ${
             schoolRowsHTML = buildSchoolTbody(schools, bCfg);
           }
 
-          wrap.innerHTML =
+               wrap.innerHTML =
             summaryStrip +
             `
       <div class="table-wrap scroll" style="border-radius:var(--r-lg)">
@@ -8641,10 +8553,13 @@ ${
             <th style="min-width:190px">SCHOOL</th>
             <th style="min-width:110px">LOCATION</th>
             <th style="min-width:115px;font-family:var(--font-mono)">CONTACT</th>
-            ${SALES_GRADE_LABELS.map((l) => `<th style="text-align:center;min-width:42px">${l}</th>`).join("")}
-            <th style="text-align:center;min-width:45px">LANG</th>
-            <th style="text-align:center;min-width:40px">FR</th>
+            <th style="text-align:center;min-width:80px">ENROLMENT</th>
+            <th style="text-align:center;min-width:55px">OPT</th>
+            <th style="text-align:center;min-width:55px">LANG</th>
+            <th style="text-align:center;min-width:45px">FRE</th>
             <th style="text-align:right;min-width:80px">BILL</th>
+            <th style="text-align:right;min-width:80px">AMT</th>
+            <th style="text-align:right;min-width:80px">BAL</th>
           </tr></thead>
           <tbody>${schoolRowsHTML}</tbody>
         </table>
@@ -8981,7 +8896,7 @@ ${
         return total;
       }
 
-      async function loadAllRepSheetsInBackground() {
+         async function loadAllRepSheetsInBackground() {
         const allReps = [];
         Object.values(CONFIG.SALES_BRANCHES).forEach((bCfg) => {
           bCfg.reps.forEach((r) => {
@@ -8990,12 +8905,18 @@ ${
         });
         if (!allReps.length) return;
 
-        const results = await Promise.all(
-          allReps.map((sheet) => fetchSalesProxy(sheet)),
-        );
-        allReps.forEach((sheet, i) => {
-          if (results[i]) salesRepCache[sheet] = results[i];
-        });
+        try {
+          const res = await fetch(
+            CONFIG.SALES_PROXY + "?sheets=" + encodeURIComponent(allReps.join(",")),
+          );
+          const json = await res.json();
+          allReps.forEach((sheet) => {
+            const entry = json[sheet];
+            if (entry && !entry.error) salesRepCache[sheet] = entry;
+          });
+        } catch (e) {
+          console.error("Batched sales proxy error:", e);
+        }
 
         const topDiv = document.getElementById("sales-kpi-top");
         if (!topDiv) return;
@@ -11051,7 +10972,7 @@ ${
 ══════════════════════════════════════════ */
 
       /* ── Constants ── */
-      const STAFF_BRANCHES = ["Greater Ghana", "Upper Ghana", "Central Ghana"];
+         const STAFF_BRANCHES = ["Greater Ghana", "Upper Ghana", "Central Ghana", "Northern Ghana"];
       const STAFF_DEPARTMENTS = [
         "Administration",
         "Accounts",
